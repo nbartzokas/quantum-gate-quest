@@ -79,9 +79,6 @@ Quest.prototype = {
 
         this.cursors = this.input.keyboard.createCursorKeys();
 
-        this.player.play('munch');
-        // this.movePlayer(Phaser.LEFT);
-
         // draw grid
         this.debugGrid = this.add.graphics(0,0);
         this.debugGrid.lineColor = '#FF0000';
@@ -178,6 +175,7 @@ Quest.prototype = {
         console.log('stop');
         this.player.body.velocity.set(0);
         this.currentDirection=Phaser.NONE;
+        this.player.animations.stop(null,true);
     },
 
     movePlayer: function (direction) {
@@ -219,6 +217,8 @@ Quest.prototype = {
         }
 
         this.currentDirection = direction;
+
+        this.player.play('munch');
 
     },
 
@@ -278,7 +278,6 @@ Quest.prototype = {
         }
         
         // two+ active directions
-        // 
         else if (activeDirections.length>1){
             const turning = activeDirections[0]; // where player wants to turn
             const direction = activeDirections[1]; // last known valid direction traveling
