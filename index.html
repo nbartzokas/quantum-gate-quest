@@ -1,0 +1,27 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>QuantumGateQuest</title>
+    <meta charset="utf-8">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000000;
+        }
+    </style>
+    <!-- <script src="/phaser.3.21.0.min.js"></script> -->
+    <script src="/phaser.min.js?version=2.2.2"></script>
+    <script src="./config.js"></script>
+    <script src="./util.js"></script>
+    <script src="./quest.js"></script>
+</head>
+<body>
+
+    <script type="text/javascript">
+        var game = new Phaser.Game(448, 496, Phaser.AUTO);
+        game.state.add('Game', Quest, true);
+    </script>
+
+</body>
+</html>
