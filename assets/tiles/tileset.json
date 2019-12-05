@@ -1,0 +1,22 @@
+{ "columns":13,
+ "editorsettings":
+    {
+     "export":
+        {
+         "format":"",
+         "target":"."
+        }
+    },
+ "image":"sokoban_tilesheet.png",
+ "imageheight":512,
+ "imagewidth":832,
+ "margin":0,
+ "name":"tileset",
+ "spacing":0,
+ "tilecount":104,
+ "tiledversion":"1.3.1",
+ "tileheight":64,
+ "tilewidth":64,
+ "type":"tileset",
+ "version":1.2
+}

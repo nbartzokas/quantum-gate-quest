@@ -1,14 +1,37 @@
+var Qubit = {
+    x:0,
+    y:0,
+    z:0,
+    xGate: function(){ this.y=1-this.y; this.z=1-this.z;},
+    yGate: function(){ this.x=1-this.x; this.z=1-this.z;},
+    zGate: function(){ this.x=1-this.x; this.y=1-this.y;},
+    hGate: function(){
+        let t = this.x;
+        this.x = this.z;
+        this.z = t;
+    },
+};
+
 var Quest = function (game) {
 
     this.map = null;
-    this.layer = null;
+    this.layerFloor = null;
+    this.layerWalls = null;
+    this.layerGates = null;
+    this.layerReads = null;
     this.player = null;
 
-    this.safetile = 14;
-    this.gridsize = 16;
+    this.gridsize = 64;
 
-    this.speed = 150;
-    this.threshold = 32;
+    this.tilesEmpty = [-1,0];
+    this.tileWall = 4;
+    this.tileGate = 75;
+    this.tileRead = 41;
+
+    this.tileOverlap = null;
+
+    this.speed = 200;
+    this.threshold = this.gridsize/2;
 
     this.marker = new Phaser.Point();
     this.turnPoint = new Phaser.Point();
@@ -38,56 +61,51 @@ Quest.prototype = {
     },
 
     preload: function () {
-
-        //  We need this because the assets are on Amazon S3
-        //  Remove the next 2 lines if running locally
-        // this.load.baseURL = 'http://files.phaser.io.s3.amazonaws.com/codingtips/issue005/';
-        // this.load.crossOrigin = 'anonymous';
-
-        this.load.image('dot', 'assets/dot.png');
-        this.load.image('tiles', 'assets/pacman-tiles.png');
-        this.load.spritesheet('player', 'assets/pacman.png', 32, 32);
-        this.load.tilemap('map', 'assets/pacman-map.json', null, Phaser.Tilemap.TILED_JSON);
+        
+        this.load.spritesheet('spritesheet', 'assets/tiles/tilesheet.png', 64, 64);
+        this.load.image('tiles', 'assets/tiles/tilesheet.png');
+        this.load.tilemap('map', 'assets/maps/map.json', null, Phaser.Tilemap.TILED_JSON);
 
     },
 
     create: function () {
 
         this.map = this.add.tilemap('map');
-        this.map.addTilesetImage('pacman-tiles', 'tiles');
+        this.map.addTilesetImage('tileset', 'tiles');
 
-        this.layer = this.map.createLayer('Pacman');
+        this.layerFloor = this.map.createLayer('floor');
 
-        this.dots = this.add.physicsGroup();
+        this.layerWalls = this.map.createLayer('walls');
+        this.map.setCollisionByExclusion(this.tilesEmpty,true/*collides*/,this.layerWalls); // TODO: magic number
 
-        this.map.createFromTiles(7, this.safetile, 'dot', this.layer, this.dots);
-
-        //  The dots will need to be offset by 6px to put them back in the middle of the grid
-        this.dots.setAll('x', 6, false, false, 1);
-        this.dots.setAll('y', 6, false, false, 1);
-
-        //  Player should collide with everything except the safe tile
-        this.map.setCollisionByExclusion([this.safetile], true, this.layer);
+        this.layerGates = this.map.createLayer('gates');
+        this.layerReads = this.map.createLayer('reads');
 
         //  Position Player at grid location 14x17 (the +8 accounts for his anchor)
-        this.player = this.add.sprite((14 * 16) + 8, (17 * 16) + 8, 'player', 0);
+        this.player = this.add.sprite(10*this.gridsize, 10*this.gridsize, 'spritesheet', 66);
         this.player.anchor.set(0.5);
-        this.player.animations.add('munch', [0, 1, 2, 1], 20, true);
+        this.player.animations.add('walk-left',  [94,95,94,96], 10, true);
+        this.player.animations.add('walk-right', [91,92,91,93], 10, true);
+        this.player.animations.add('walk-up',    [68,69,68,70], 10, true);
+        this.player.animations.add('walk-down',  [65,66,65,67], 10, true);
 
         this.physics.arcade.enable(this.player);
-        this.player.body.setSize(16, 16, 0, 0);
+
+        this.gates = this.add.physicsGroup();
+        this.map.createFromTiles(this.tileGate, -1, 'spritesheet', this.layerGates, this.gates);
+        // https://github.com/photonstorm/phaser/issues/2175
+        this.gates.children.forEach( tile=>{
+            tile.frame=this.tileGate;
+        });
+
+        this.reads = this.add.physicsGroup();
+        this.map.createFromTiles(this.tileRead, -1, 'spritesheet', this.layerReads, this.reads);
+        // https://github.com/photonstorm/phaser/issues/2175
+        this.reads.children.forEach( tile=>{
+            tile.frame=this.tileRead;
+        });
 
         this.cursors = this.input.keyboard.createCursorKeys();
-
-        // draw grid
-        this.debugGrid = this.add.graphics(0,0);
-        this.debugGrid.lineColor = '#FF0000';
-        this.debugGrid.lineWidth = 1;
-        for (let x = 0; x < this.width; x+=this.gridsize){
-            for (let y = 0; y < this.height; x+=this.gridsize){
-                this.debugGrid.drawRect(x,y,this.gridsize,this.gridsize);
-            }    
-        }
 
     },
 
@@ -103,12 +121,12 @@ Quest.prototype = {
             // if the key is down and not detected and stored yet, store it
             if (key.isDown && index===-1){
                 this.activeDirections.splice(0,0,direction);
-                console.log('this.activeDirections',this.activeDirections);
+                console.debug('this.activeDirections',this.activeDirections);
             }
             // if the key is stored no longer down, remove it
             else if (!key.isDown && index!==-1){
                 this.activeDirections.splice(index,1);
-                console.log('this.activeDirections',this.activeDirections);
+                console.debug('this.activeDirections',this.activeDirections);
             }
         }
         return this.activeDirections;
@@ -122,41 +140,41 @@ Quest.prototype = {
     checkDirection: function (turnTo) {
 
         if (this.directions[turnTo] === null){
-            console.debug('checkDirection: no valid tile that way', util.dirToString(turnTo) );
+            console.debug('checkDirection: no valid tile that way', util.dirToString(turnTo), this.directions[turnTo] );
             return false;
         }
 
-        else if (this.directions[turnTo].index !== this.safetile){
-            console.debug('checkDirection: no floor tile that way', util.dirToString(turnTo) );
+        else if ( this.tilesEmpty.indexOf(this.directions[turnTo].index) === -1 ){
+            console.debug('checkDirection: no floor tile that way', util.dirToString(turnTo), this.directions[turnTo] );
             return false;
         }
 
         else if (this.currentDirection === this.opposites[turnTo]){
-            console.debug('checkDirection: permitting turn around', util.dirToString(turnTo) );
+            console.debug('checkDirection: permitting turn around', util.dirToString(turnTo), this.directions[turnTo] );
             return true;
         }
 
         else{
-            console.debug('checkDirection: permitting turn', util.dirToString(turnTo) );
+            console.debug('checkDirection: permitting turn', util.dirToString(turnTo), this.directions[turnTo] );
             return true;
         }
 
     },
 
     turn: function (turnTo) {
-        console.log('attempting turn',turnTo);
+        console.debug('attempting turn',turnTo);
 
         var cx = Math.floor(this.player.x);
         var cy = Math.floor(this.player.y);
 
         //  This needs a threshold, because at high speeds you can't turn because the coordinates skip past
-        console.log(cx, this.turnPoint.x, this.threshold, cy, this.turnPoint.y, this.threshold);
+        console.debug(cx, this.turnPoint.x, this.threshold, cy, this.turnPoint.y, this.threshold);
         if (!this.math.fuzzyEqual(cx, this.turnPoint.x, this.threshold) || !this.math.fuzzyEqual(cy, this.turnPoint.y, this.threshold))
         {
             return false;
         }
 
-        console.log('turning',turnTo);
+        console.debug('turning',turnTo);
 
         //  Grid align before turning
         if (turnTo===Phaser.LEFT||turnTo===Phaser.RIGHT){
@@ -172,80 +190,88 @@ Quest.prototype = {
     },
 
     stopPlayer: function () {
-        console.log('stop');
+        console.debug('stop');
         this.player.body.velocity.set(0);
         this.currentDirection=Phaser.NONE;
         this.player.animations.stop(null,true);
     },
 
     movePlayer: function (direction) {
-        console.log('move', util.dirToString(direction) );
+        console.debug('move', util.dirToString(direction) );
 
         var speed = this.speed;
 
-        if (direction === Phaser.LEFT || direction === Phaser.UP)
-        {
+        if (direction === Phaser.LEFT || direction === Phaser.UP) {
             speed = -speed;
         }
 
-        if (direction === Phaser.LEFT || direction === Phaser.RIGHT)
-        {
+        if (direction === Phaser.LEFT || direction === Phaser.RIGHT) {
             this.player.body.velocity.x = speed;
             this.player.body.velocity.y = 0;
-        }
-        else
-        {
+        } else {
             this.player.body.velocity.x = 0;
             this.player.body.velocity.y = speed;
         }
 
-        //  Reset the scale and angle (Player is facing to the right in the sprite sheet)
-        this.player.scale.x = 1;
-        this.player.angle = 0;
-
-        if (direction === Phaser.LEFT)
-        {
-            this.player.scale.x = -1;
+        if (direction === Phaser.LEFT){
+            this.player.play('walk-left');
         }
-        else if (direction === Phaser.UP)
-        {
-            this.player.angle = 270;
+        else if (direction === Phaser.RIGHT){
+            this.player.play('walk-right');
         }
-        else if (direction === Phaser.DOWN)
-        {
-            this.player.angle = 90;
+        else if (direction === Phaser.UP){
+            this.player.play('walk-up');
+        }
+        else if (direction === Phaser.DOWN){
+            this.player.play('walk-down');
         }
 
         this.currentDirection = direction;
 
-        this.player.play('munch');
-
     },
 
-    eatDot: function (pacman, dot) {
+    checkOverlap: function checkOverlap(spriteA, spriteB) {
+        var boundsA = spriteA.getBounds();
+        var boundsB = spriteB.getBounds();
+        return Phaser.Rectangle.intersects(boundsA, boundsB);
+    },
 
-        dot.kill();
-
-        if (this.dots.total === 0)
-        {
-            this.dots.callAll('revive');
+    handleOverlapGate: function (sprite,tile) {
+        if (!this.tileOverlap){
+            let oldZ = Qubit.z;
+            Qubit.xGate();
+            let newZ = Qubit.z;
+            console.log('xGate',oldZ,newZ);
+            this.tileOverlap = tile;
         }
+    },
 
+    // TODO: these handlers smell like a component behavior for a tile overlap system
+    handleOverlapRead: function (sprite,tile) {
+        if (!this.tileOverlap){
+            let z = Qubit.z;
+            console.log('readZ',z);
+            z===1 && console.log('WIN POINT');
+            this.tileOverlap = tile;
+        }
     },
 
     update: function () {
         
-        this.physics.arcade.collide(this.player, this.layer);
-        this.physics.arcade.overlap(this.player, this.dots, this.eatDot, null, this);
+        this.physics.arcade.collide(this.player, this.layerWalls, ()=>console.debug('bonk'));
+
+        if (this.tileOverlap && !this.checkOverlap(this.player, this.tileOverlap)) { this.tileOverlap = null; }
+        this.physics.arcade.overlap(this.player, this.gates, this.handleOverlapGate, null, this);
+        this.physics.arcade.overlap(this.player, this.reads, this.handleOverlapRead, null, this);
 
         this.marker.x = this.math.snapToFloor(Math.floor(this.player.x), this.gridsize) / this.gridsize;
         this.marker.y = this.math.snapToFloor(Math.floor(this.player.y), this.gridsize) / this.gridsize;
 
         //  Update our grid sensors
-        this.directions[Phaser.LEFT]  = this.map.getTileLeft(this.layer.index, this.marker.x, this.marker.y);
-        this.directions[Phaser.RIGHT] = this.map.getTileRight(this.layer.index, this.marker.x, this.marker.y);
-        this.directions[Phaser.UP]    = this.map.getTileAbove(this.layer.index, this.marker.x, this.marker.y);
-        this.directions[Phaser.DOWN]  = this.map.getTileBelow(this.layer.index, this.marker.x, this.marker.y);
+        this.directions[Phaser.LEFT]  = this.map.getTileLeft(this.layerWalls.index, this.marker.x, this.marker.y);
+        this.directions[Phaser.RIGHT] = this.map.getTileRight(this.layerWalls.index, this.marker.x, this.marker.y);
+        this.directions[Phaser.UP]    = this.map.getTileAbove(this.layerWalls.index, this.marker.x, this.marker.y);
+        this.directions[Phaser.DOWN]  = this.map.getTileBelow(this.layerWalls.index, this.marker.x, this.marker.y);
 
         const activeDirections = this.getDirectionKeys();
 
