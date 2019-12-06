@@ -10,18 +10,13 @@
             background-color: #000000;
         }
     </style>
-    <!-- <script src="/phaser.3.21.0.min.js"></script> -->
-    <script src="/phaser.min.js?version=2.2.2"></script>
-    <script src="./config.js"></script>
-    <script src="./util.js"></script>
-    <script src="./quest.js"></script>
+    <script src="./src/vendor/phaser.2.6.2.min.js"></script>
+    <script src="./src/config.js"></script>
+    <script src="./src/util.js"></script>
+    <script src="./src/quest.js"></script>
+    <script src="./src/index.js"></script>
+
 </head>
 <body>
-
-    <script type="text/javascript">
-        var game = new Phaser.Game(1280, 1280, Phaser.AUTO);
-        game.state.add('Game', Quest, true);
-    </script>
-
 </body>
 </html>
