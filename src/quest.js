@@ -1,21 +1,36 @@
-import config from './config';
+// import config from './config';
 import util from './util';
 
-var Qubit = {
-    x:0,
-    y:0,
-    z:0,
-    xGate: function(){ this.y=1-this.y; this.z=1-this.z;},
-    yGate: function(){ this.x=1-this.x; this.z=1-this.z;},
-    zGate: function(){ this.x=1-this.x; this.y=1-this.y;},
-    hGate: function(){
-        let t = this.x;
-        this.x = this.z;
-        this.z = t;
-    },
+class Qubit {
+    constructor(){
+        this.x = [];
+        this.y = [];
+        this.z = [];
+    }
+    /**
+     * Take a Z measurement
+     * Because game needs this function to be synchronous,
+     * z measurements are pre-computed during gate applications.
+     * Read functions return a random measurement from the 
+     * precomputed set.
+     * @returns {number} measurement
+     */
+    zRead(){
+        return this.z[Math.floor(Math.random()*this.z.length)];
+    }
+    /**
+     * Apply an X-Gate to the qubit
+     * @param {function} cb 
+     * @returns {object} JSON response
+     */
+    xGate(cb){
+        return fetch('/q/xgate').then(cb);
+    }
 };
 
 var Quest = function (game) {
+
+    this.qubit = null;
 
     this.map = null;
     this.layerFloor = null;
@@ -50,6 +65,8 @@ var Quest = function (game) {
 Quest.prototype = {
 
     init: function () {
+
+        this.qubit = new Qubit();
 
         this.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
         this.scale.pageAlignHorizontally = true;
@@ -92,9 +109,8 @@ Quest.prototype = {
 
         this.gates = this.add.physicsGroup();
         this.map.createFromTiles(this.tileGate, -1, 'spritesheet', this.layerGates, this.gates);
-        // https://github.com/photonstorm/phaser/issues/2175
         this.gates.children.forEach( tile=>{
-            tile.frame=this.tileGate;
+            tile.frame=this.tileGate; // https://github.com/photonstorm/phaser/issues/2175
         });
 
         this.burst = this.add.sprite(0,0,'burst');
@@ -117,9 +133,8 @@ Quest.prototype = {
 
         this.reads = this.add.physicsGroup();
         this.map.createFromTiles(this.tileRead, -1, 'spritesheet', this.layerReads, this.reads);
-        // https://github.com/photonstorm/phaser/issues/2175
         this.reads.children.forEach( tile=>{
-            tile.frame=this.tileRead;
+            tile.frame=this.tileRead; // https://github.com/photonstorm/phaser/issues/2175
             tile.body.immovable=true;
             tile.body.offset.set(5,5);
             tile.body.width-=10;
@@ -279,19 +294,23 @@ Quest.prototype = {
     handleOverlapGate: function (sprite,tile) {
         // console.log(sprite,tile);
         if (!this.tileOverlap){
-            let oldZ = Qubit.z;
-            Qubit.xGate();
-            let newZ = Qubit.z;
-            console.log('xGate',oldZ,newZ);
 
-            this.player.tint = newZ * 0xff0000 || 0xffffff;
+            this.qubit.xGate()
+            .then(this.qubit.zRead())
+            .then(function(v){
 
-            // move burst here and play
-            this.burst.x = tile.x + tile.width/2;
-            this.burst.y = tile.y + tile.height/2;
-            this.burst.play('burst');
-            this.burst.sound.play();
+                console.log(arguments);
 
+                // this.player.tint = newZ * 0xff0000 || 0xffffff;
+    
+                // // move burst here and play
+                // this.burst.x = tile.x + tile.width/2;
+                // this.burst.y = tile.y + tile.height/2;
+                // this.burst.play('burst');
+                // this.burst.sound.play();
+
+            });
+    
             this.tileOverlap = tile;
         }
     },
@@ -299,28 +318,33 @@ Quest.prototype = {
     // TODO: these handlers smell like a component behavior for a tile overlap system
     handleOverlapRead: function (sprite,tile) {
         if (!this.tileOverlap){
-            let z = Qubit.z;
-            console.log('readZ',z);
-            if (z===1){
-                console.log('WIN POINT');
-                // move powerup here and play
-                this.powerup.x = tile.x + tile.width/2;
-                this.powerup.y = tile.y + tile.height/2;
-                this.powerup.play('powerup');
-                this.powerup.sound.play();
-                this.score.value += 1;
-                this.score.update();
-            }else{
-                console.log('LOSE POINT');
-                this.score.value -= 1;
-                this.score.update();
-            }
+
+            this.qubit.zRead(function(z){
+
+                console.log(arguments);
+
+                // console.log('readZ',z);
+                // if (z===1){
+                //     console.log('WIN POINT');
+                //     // move powerup here and play
+                //     this.powerup.x = tile.x + tile.width/2;
+                //     this.powerup.y = tile.y + tile.height/2;
+                //     this.powerup.play('powerup');
+                //     this.powerup.sound.play();
+                //     this.score.value += 1;
+                //     this.score.update();
+                // }else{
+                //     console.log('LOSE POINT');
+                //     this.score.value -= 1;
+                //     this.score.update();
+                // }
+            });
 
             this.tileOverlap = tile;
         }
     },
     handleCollideRead: function (sprite,tile){
-        return Qubit.z===0;
+        return this.qubit.z===0;
     },
 
     update: function () {
