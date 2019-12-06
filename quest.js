@@ -82,7 +82,7 @@ Quest.prototype = {
         this.layerFloor = this.map.createLayer('floor');
 
         this.layerWalls = this.map.createLayer('walls');
-        this.map.setCollisionByExclusion(this.tilesEmpty,true/*collides*/,this.layerWalls); // TODO: magic number
+        this.map.setCollisionByExclusion(this.tilesEmpty,true/*collides*/,this.layerWalls);
 
         this.layerGates = this.map.createLayer('gates');
         this.layerReads = this.map.createLayer('reads');
@@ -117,6 +117,10 @@ Quest.prototype = {
         // https://github.com/photonstorm/phaser/issues/2175
         this.reads.children.forEach( tile=>{
             tile.frame=this.tileRead;
+            tile.body.immovable=true;
+            tile.body.offset.set(5,5);
+            tile.body.width-=10;
+            tile.body.height-=10;
         });
 
         this.powerup = this.add.sprite(0,0,'powerup');
@@ -312,10 +316,14 @@ Quest.prototype = {
             this.tileOverlap = tile;
         }
     },
+    handleCollideRead: function (sprite,tile){
+        return Qubit.z===0;
+    },
 
     update: function () {
         
         this.physics.arcade.collide(this.player, this.layerWalls, ()=>console.debug('bonk'));
+        this.physics.arcade.collide(this.player, this.reads, null, this.handleCollideRead);
 
         if (this.tileOverlap && !this.checkOverlap(this.player, this.tileOverlap)) { this.tileOverlap = null; }
         this.physics.arcade.overlap(this.player, this.gates, this.handleOverlapGate, null, this);
