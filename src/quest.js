@@ -1,3 +1,6 @@
+import config from './config';
+import util from './util';
+
 var Qubit = {
     x:0,
     y:0,
@@ -401,3 +404,5 @@ Quest.prototype = {
     }
 
 };
+
+export default Quest;

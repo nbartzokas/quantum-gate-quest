@@ -2,15 +2,22 @@
   "name": "quantumgatequest",
   "version": "1.0.0",
   "description": "",
-  "private":true,
+  "private": true,
   "main": "src/index.js",
   "scripts": {
+    "build": "webpack",
+    "start": "webpack-dev-server",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "expose-loader": "^0.7.5",
     "webpack": "^4.41.2",
-    "webpack-cli": "^3.3.10"
+    "webpack-cli": "^3.3.10",
+    "webpack-dev-server": "^3.9.0"
+  },
+  "dependencies": {
+    "phaser-ce": "^2.13.3"
   }
 }

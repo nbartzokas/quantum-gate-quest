@@ -1,4 +1,4 @@
-const util = {
+export default {
     dirToString: function(dir){
         return dir === Phaser.NONE ? 'NONE' :
                dir === Phaser.LEFT ? 'LEFT' :

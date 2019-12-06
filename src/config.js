@@ -1,4 +1,4 @@
-const config = {
+export default {
     levels:[
         {
             name:'level1',
