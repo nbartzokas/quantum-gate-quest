@@ -62,6 +62,12 @@ Quest.prototype = {
 
     preload: function () {
         
+        this.load.spritesheet('burst', 'assets/sprites/burst.png', 100, 100);
+        this.load.audio('burst_sound','assets/sounds/446145__justinvoke__freeze-hit.wav');
+
+        this.load.spritesheet('powerup', 'assets/sprites/burst.png', 100, 100);
+        this.load.audio('powerup_sound','assets/sounds/478342__joao-janz__bouncing-power-up-1-5.wav');
+
         this.load.spritesheet('spritesheet', 'assets/tiles/tilesheet.png', 64, 64);
         this.load.image('tiles', 'assets/tiles/tilesheet.png');
         this.load.tilemap('map', 'assets/maps/map.json', null, Phaser.Tilemap.TILED_JSON);
@@ -81,6 +87,21 @@ Quest.prototype = {
         this.layerGates = this.map.createLayer('gates');
         this.layerReads = this.map.createLayer('reads');
 
+        this.gates = this.add.physicsGroup();
+        this.map.createFromTiles(this.tileGate, -1, 'spritesheet', this.layerGates, this.gates);
+        // https://github.com/photonstorm/phaser/issues/2175
+        this.gates.children.forEach( tile=>{
+            tile.frame=this.tileGate;
+        });
+
+        this.burst = this.add.sprite(0,0,'burst');
+        this.burst.anchor.set(0.5);
+        this.burst.tint = 0xffdd00;
+        this.burst.width = 256;
+        this.burst.height = 256;
+        this.burst.animations.add('burst');
+        this.burst.sound = game.add.audio('burst_sound');
+
         //  Position Player at grid location 14x17 (the +8 accounts for his anchor)
         this.player = this.add.sprite(10*this.gridsize, 10*this.gridsize, 'spritesheet', 66);
         this.player.anchor.set(0.5);
@@ -91,13 +112,6 @@ Quest.prototype = {
 
         this.physics.arcade.enable(this.player);
 
-        this.gates = this.add.physicsGroup();
-        this.map.createFromTiles(this.tileGate, -1, 'spritesheet', this.layerGates, this.gates);
-        // https://github.com/photonstorm/phaser/issues/2175
-        this.gates.children.forEach( tile=>{
-            tile.frame=this.tileGate;
-        });
-
         this.reads = this.add.physicsGroup();
         this.map.createFromTiles(this.tileRead, -1, 'spritesheet', this.layerReads, this.reads);
         // https://github.com/photonstorm/phaser/issues/2175
@@ -105,7 +119,26 @@ Quest.prototype = {
             tile.frame=this.tileRead;
         });
 
+        this.powerup = this.add.sprite(0,0,'powerup');
+        this.powerup.anchor.set(0.5);
+        this.powerup.tint = 0xff0000;
+        this.powerup.width = 256;
+        this.powerup.height = 256;
+        this.powerup.animations.add('powerup');
+        this.powerup.sound = game.add.audio('powerup_sound');
+
         this.cursors = this.input.keyboard.createCursorKeys();
+
+        this.score = {
+            value:0,
+            toString: function(){ return 'Score: '+this.value; },
+            text: game.add.text(0,0, 'Score: 0', {
+                font: '65px Arial',
+                fill: '#ff0044',
+                align: 'left'
+            }),
+            update: function(){ this.text.setText(this.toString()); }
+        };
 
     },
 
@@ -237,11 +270,21 @@ Quest.prototype = {
     },
 
     handleOverlapGate: function (sprite,tile) {
+        // console.log(sprite,tile);
         if (!this.tileOverlap){
             let oldZ = Qubit.z;
             Qubit.xGate();
             let newZ = Qubit.z;
             console.log('xGate',oldZ,newZ);
+
+            this.player.tint = newZ * 0xff0000 || 0xffffff;
+
+            // move burst here and play
+            this.burst.x = tile.x + tile.width/2;
+            this.burst.y = tile.y + tile.height/2;
+            this.burst.play('burst');
+            this.burst.sound.play();
+
             this.tileOverlap = tile;
         }
     },
@@ -251,7 +294,21 @@ Quest.prototype = {
         if (!this.tileOverlap){
             let z = Qubit.z;
             console.log('readZ',z);
-            z===1 && console.log('WIN POINT');
+            if (z===1){
+                console.log('WIN POINT');
+                // move powerup here and play
+                this.powerup.x = tile.x + tile.width/2;
+                this.powerup.y = tile.y + tile.height/2;
+                this.powerup.play('powerup');
+                this.powerup.sound.play();
+                this.score.value += 1;
+                this.score.update();
+            }else{
+                console.log('LOSE POINT');
+                this.score.value -= 1;
+                this.score.update();
+            }
+
             this.tileOverlap = tile;
         }
     },
