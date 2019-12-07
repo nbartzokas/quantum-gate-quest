@@ -102,8 +102,8 @@ Quest.prototype = {
         this.load.tilemap('map', 'assets/maps/map.json', null, Phaser.Tilemap.TILED_JSON);
 
         // quantum ui
-        this.load.image('qcircuit', 'draw');
-        this.load.image('qbloch', 'bloch');
+        this.load.image('qcircuit', 'draw.png?nocache='+Date.now(),true);
+        this.load.image('qbloch', 'bloch.png?nocache='+Date.now(),true);
 
     },
 
