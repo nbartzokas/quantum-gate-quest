@@ -23,22 +23,35 @@ def index():
 
 @app.route('/q/<action>')
 def query(action):
-  circuit.x(0)
+
+  # apply gate, unless
+  if ( len(circuit.data) > 0 and isinstance( circuit.data[-1][0], qiskit.extensions.standard.XGate ) ):
+    # if last gate is same as this gate, remove last gate
+    circuit.data.pop()
+  else:
+    # apply gate
+    circuit.x(0)
+
+  # measure, then remove measurement
   circuit.measure([0],[0])
   result = execute(circuit, backend = backend_qasm, shots = 1024).result()
   counts = result.get_counts(circuit)
+  circuit.data.pop()
+
   return json.dumps(counts)
 
 @app.route('/draw')
-def draw():
+@app.route('/draw.<format>')
+def draw(format='png'):
   fig = circuit.draw(output='mpl')
-  return send_figure(fig)
+  return send_figure(fig,format)
 
 @app.route('/bloch')
-def bloch():
+@app.route('/bloch.<format>')
+def bloch(format='png'):
   job = execute(circuit, backend_statevector)
   fig = visualization.plot_bloch_multivector(job.result().get_statevector(circuit))
-  return send_figure(fig)
+  return send_figure(fig,format)
 
 if __name__ == "__main__":
   app.run()
