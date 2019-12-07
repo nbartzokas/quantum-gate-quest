@@ -7,7 +7,7 @@ import Phaser from 'expose-loader?Phaser!phaser-ce/build/custom/phaser-split.js'
 import Quest from './quest';
 
 window.addEventListener('load',function(){
-    var game = new Phaser.Game(1280, 1280, Phaser.AUTO);
+    var game = new Phaser.Game(2560, 1280, Phaser.AUTO);
     game.state.add('Game', Quest, true);
     window.game = game;
 });

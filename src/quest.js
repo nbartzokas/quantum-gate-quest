@@ -41,8 +41,14 @@ var Quest = function (game) {
     this.layerGates = null;
     this.layerReads = null;
     this.player = null;
+    this.qcircuit = null;
+    this.qbloch = null;
 
     this.gridsize = 64;
+    this.startPoint = {
+        x: 1.5*this.gridsize, 
+        y: 7.5*this.gridsize
+    }
 
     this.tilesEmpty = [-1,0];
     this.tileWall = 4;
@@ -95,6 +101,10 @@ Quest.prototype = {
         this.load.image('tiles', 'assets/tiles/tilesheet.png');
         this.load.tilemap('map', 'assets/maps/map.json', null, Phaser.Tilemap.TILED_JSON);
 
+        // quantum ui
+        this.load.image('qcircuit', 'draw');
+        this.load.image('qbloch', 'bloch');
+
     },
 
     create: function () {
@@ -125,7 +135,7 @@ Quest.prototype = {
         this.burst.sound = game.add.audio('burst_sound');
 
         //  Position Player at grid location 14x17 (the +8 accounts for his anchor)
-        this.player = this.add.sprite(10*this.gridsize, 10*this.gridsize, 'spritesheet', 66);
+        this.player = this.add.sprite(this.startPoint.x, this.startPoint.y, 'spritesheet', 66);
         this.player.anchor.set(0.5);
         this.player.animations.add('walk-left',  [94,95,94,96], 10, true);
         this.player.animations.add('walk-right', [91,92,91,93], 10, true);
@@ -165,6 +175,23 @@ Quest.prototype = {
             update: function(){ this.text.setText(this.toString()); }
         };
 
+        this.qbloch = this.add.image(1280,0,'qbloch');
+        this.qcircuit = this.add.image(1280,480,'qcircuit');
+
+    },
+
+    reloadDynamicAssets: function(){
+        console.log('reloadDynamicAssets called');
+        this.load.image('qcircuit', 'draw?nocache='+Date.now(),true);
+        this.load.image('qbloch', 'bloch?nocache='+Date.now(),true);
+        this.load.onLoadComplete.addOnce(()=>{
+            console.log('reloadDynamicAssets load completed');
+            // TODO: handle load failure
+            // update q images
+            this.qbloch.loadTexture('qbloch');
+            this.qcircuit.loadTexture('qcircuit');
+        });
+        this.load.start();
     },
 
     getDirectionKeys: function() {
@@ -312,6 +339,8 @@ Quest.prototype = {
                 this.burst.y = tile.y + tile.height/2;
                 this.burst.play('burst');
                 this.burst.sound.play();
+
+                this.reloadDynamicAssets();
 
             });
 
