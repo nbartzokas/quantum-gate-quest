@@ -3,9 +3,9 @@ import util from './util';
 
 class Qubit {
     constructor(){
-        this.x = [];
-        this.y = [];
-        this.z = [];
+        this.x = 0;
+        this.y = 0;
+        this.z = 0;
     }
     /**
      * Take a Z measurement
@@ -16,7 +16,7 @@ class Qubit {
      * @returns {number} measurement
      */
     zRead(){
-        return this.z[Math.floor(Math.random()*this.z.length)];
+        return this.z;
     }
     /**
      * Apply an X-Gate to the qubit
@@ -24,7 +24,10 @@ class Qubit {
      * @returns {object} JSON response
      */
     xGate(cb){
-        return fetch('/q/xgate').then(cb);
+        return fetch('/q/xgate')
+            .then(response => response.json())
+            .then(json => this.z=util.jobCountWinner(json)) // TODO: assumes Z measurement
+            .then(cb);
     }
 };
 
@@ -292,25 +295,26 @@ Quest.prototype = {
     },
 
     handleOverlapGate: function (sprite,tile) {
-        // console.log(sprite,tile);
         if (!this.tileOverlap){
-
-            this.qubit.xGate()
-            .then(this.qubit.zRead())
-            .then(function(v){
-
-                console.log(arguments);
-
-                // this.player.tint = newZ * 0xff0000 || 0xffffff;
     
-                // // move burst here and play
-                // this.burst.x = tile.x + tile.width/2;
-                // this.burst.y = tile.y + tile.height/2;
-                // this.burst.play('burst');
-                // this.burst.sound.play();
+            console.log('applying xGate');
+
+            this.qubit.xGate(()=>{
+
+                const z = this.qubit.zRead();
+
+                console.log('done applying xGate, readZ',z);
+    
+                this.player.tint = z * 0xff0000 || 0xffffff;
+    
+                // move burst here and play
+                this.burst.x = tile.x + tile.width/2;
+                this.burst.y = tile.y + tile.height/2;
+                this.burst.play('burst');
+                this.burst.sound.play();
 
             });
-    
+
             this.tileOverlap = tile;
         }
     },
@@ -319,38 +323,35 @@ Quest.prototype = {
     handleOverlapRead: function (sprite,tile) {
         if (!this.tileOverlap){
 
-            this.qubit.zRead(function(z){
-
-                console.log(arguments);
-
-                // console.log('readZ',z);
-                // if (z===1){
-                //     console.log('WIN POINT');
-                //     // move powerup here and play
-                //     this.powerup.x = tile.x + tile.width/2;
-                //     this.powerup.y = tile.y + tile.height/2;
-                //     this.powerup.play('powerup');
-                //     this.powerup.sound.play();
-                //     this.score.value += 1;
-                //     this.score.update();
-                // }else{
-                //     console.log('LOSE POINT');
-                //     this.score.value -= 1;
-                //     this.score.update();
-                // }
-            });
+            const z = this.qubit.zRead();
+            
+            console.log('readZ',z);
+            if (z===1){
+                console.log('WIN POINT');
+                // move powerup here and play
+                this.powerup.x = tile.x + tile.width/2;
+                this.powerup.y = tile.y + tile.height/2;
+                this.powerup.play('powerup');
+                this.powerup.sound.play();
+                this.score.value += 1;
+                this.score.update();
+            }else{
+                console.log('LOSE POINT');
+                this.score.value -= 1;
+                this.score.update();
+            }
 
             this.tileOverlap = tile;
         }
     },
     handleCollideRead: function (sprite,tile){
-        return this.qubit.z===0;
+        return this.qubit.zRead()===0;
     },
 
     update: function () {
         
         this.physics.arcade.collide(this.player, this.layerWalls, ()=>console.debug('bonk'));
-        this.physics.arcade.collide(this.player, this.reads, null, this.handleCollideRead);
+        this.physics.arcade.collide(this.player, this.reads, null, this.handleCollideRead, this);
 
         if (this.tileOverlap && !this.checkOverlap(this.player, this.tileOverlap)) { this.tileOverlap = null; }
         this.physics.arcade.overlap(this.player, this.gates, this.handleOverlapGate, null, this);
