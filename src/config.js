@@ -21,10 +21,21 @@ export default {
     gridsize: GRID_SIZE,
 
     player:{
-        startPoint: {
+        sprite:{
+            key: 'spritesheet',
+            frame: 66,
+            anchor: 0.5,
+            // starting point
             x: 1.5 * GRID_SIZE, 
-            y: 7.5 * GRID_SIZE
+            y: 7.5 * GRID_SIZE,
         },
+        animations:[
+            { name: 'walk-left',  frames: [94,95,94,96], frameRate: 10, loop: true },
+            { name: 'walk-right', frames: [91,92,91,93], frameRate: 10, loop: true },
+            { name: 'walk-up',    frames: [68,69,68,70], frameRate: 10, loop: true },
+            { name: 'walk-down',  frames: [65,66,65,67], frameRate: 10, loop: true },
+        ],
+        physics: true,
         speed: 200,
     },
 

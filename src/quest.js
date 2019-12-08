@@ -1,4 +1,5 @@
 import config from './config';
+import Player from './player';
 import Qubit from './qubit';
 import util from './util';
 
@@ -90,13 +91,7 @@ Quest.prototype = {
         this.burst.animations.add('burst');
         this.burst.sound = game.add.audio('burst_sound');
 
-        this.player = this.add.sprite(config.player.startPoint.x, config.player.startPoint.y, 'spritesheet', 66);
-        this.player.anchor.set(0.5);
-        this.player.animations.add('walk-left',  [94,95,94,96], 10, true);
-        this.player.animations.add('walk-right', [91,92,91,93], 10, true);
-        this.player.animations.add('walk-up',    [68,69,68,70], 10, true);
-        this.player.animations.add('walk-down',  [65,66,65,67], 10, true);
-        this.physics.arcade.enable(this.player);
+        this.player = Player.create( this, config.player );
 
         this.reads = this.add.physicsGroup();
         this.map.createFromTiles(config.tiles.read, -1, 'spritesheet', this.layerReads, this.reads);

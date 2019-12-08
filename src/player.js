@@ -1,19 +1,29 @@
-export default class Player{
-    constructor(){}
-    init(){
+// Phaser CE + Webpack loading
+// https://github.com/photonstorm/phaser-ce/blob/master/resources/Project%20Templates/Webpack/src/index.js
+import PIXI from 'expose-loader?PIXI!phaser-ce/build/custom/pixi.js';
+import p2 from 'expose-loader?p2!phaser-ce/build/custom/p2.js';
+import Phaser from 'expose-loader?Phaser!phaser-ce/build/custom/phaser-split.js';
 
-        // // sprite
-        // this.player = this.add.sprite(config.player.startPoint.x, config.player.startPoint.y, 'spritesheet', 66);
-        // this.player.anchor.set(0.5);
+export default class Player extends Phaser.Sprite {
+    static create(game,options){
 
-        // // animations
-        // this.player.animations.add('walk-left',  [94,95,94,96], 10, true);
-        // this.player.animations.add('walk-right', [91,92,91,93], 10, true);
-        // this.player.animations.add('walk-up',    [68,69,68,70], 10, true);
-        // this.player.animations.add('walk-down',  [65,66,65,67], 10, true);
+        // sprite
+        const player = game.add.sprite(options.sprite.x, options.sprite.y, options.sprite.key, options.sprite.frame);
+        player.anchor.set(options.sprite.anchor);
 
-        // // physics
-        // this.physics.arcade.enable(this.player);
+        // animations
+        if (options.animations && options.animations.constructor === Array){
+            for (let animation of options.animations){
+                player.animations.add(animation.name, animation.frames, animation.frameRate, animation.loop);
+            }
+        }
+
+        // physics
+        if (options.physics){
+            game.physics.arcade.enable(player);
+        }
+
+        return player;
 
     }
 }
