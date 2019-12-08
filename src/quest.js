@@ -7,6 +7,7 @@ class Qubit {
         this.y = 0;
         this.z = 0;
     }
+
     /**
      * Take a Z measurement
      * Because game needs this function to be synchronous,
@@ -18,6 +19,7 @@ class Qubit {
     zRead(){
         return this.z;
     }
+    
     /**
      * Apply an X-Gate to the qubit
      * @param {function} cb 

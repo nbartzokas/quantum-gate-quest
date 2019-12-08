@@ -6,7 +6,7 @@
   "main": "src/index.js",
   "scripts": {
     "start": "concurrently -c \"blue,red\" \"npm:server\" \"npm:webpack\"",
-    "server": "python server.py",
+    "server": "nodemon -w server.py -e python server.py",
     "webpack": "webpack",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -15,6 +15,7 @@
   "devDependencies": {
     "concurrently": "^5.0.0",
     "expose-loader": "^0.7.5",
+    "nodemon": "^2.0.1",
     "webpack": "^4.41.2",
     "webpack-cli": "^3.3.10",
     "webpack-dev-server": "^3.9.0"
