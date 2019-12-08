@@ -24,7 +24,7 @@ class Qubit {
      * @returns {object} JSON response
      */
     xGate(cb){
-        return fetch('/q/xgate')
+        return fetch('/q/XGate')
             .then(response => response.json())
             .then(json => this.z=util.jobCountWinner(json)) // TODO: assumes Z measurement
             .then(cb);
@@ -175,8 +175,10 @@ Quest.prototype = {
             update: function(){ this.text.setText(this.toString()); }
         };
 
+        // q ui
         this.qbloch = this.add.image(1280,0,'qbloch');
         this.qcircuit = this.add.image(1280,480,'qcircuit');
+        this.qbloch_zread_label = this.add.image(1504,400,'spritesheet',this.tileRead);
 
     },
 
@@ -187,7 +189,7 @@ Quest.prototype = {
         this.load.onLoadComplete.addOnce(()=>{
             console.log('reloadDynamicAssets load completed');
             // TODO: handle load failure
-            // update q images
+            // update q images 
             this.qbloch.loadTexture('qbloch');
             this.qcircuit.loadTexture('qcircuit');
         });

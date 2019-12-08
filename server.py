@@ -21,16 +21,25 @@ def send_figure(image,format='png'):
 def index():
   return app.send_static_file("index.html")
 
-@app.route('/q/<action>')
-def query(action):
+@app.route('/q/clear')
+def clear():
+  circuit.data.clear()
+  return json.dumps({'success':True})
+
+@app.route('/q/<instruction>')
+def query(instruction):
+
+  # get instruction class
+  inst_class = getattr( qiskit.extensions.standard, instruction )
 
   # apply gate, unless
-  if ( len(circuit.data) > 0 and isinstance( circuit.data[-1][0], qiskit.extensions.standard.XGate ) ):
+  if ( len(circuit.data) > 0 and isinstance( circuit.data[-1][0], inst_class ) ):
     # if last gate is same as this gate, remove last gate
     circuit.data.pop()
   else:
     # apply gate
-    circuit.x(0)
+    # circuit.x(0)
+    circuit.append(inst_class(),circuit.qubits)
 
   # measure, then remove measurement
   circuit.measure([0],[0])
