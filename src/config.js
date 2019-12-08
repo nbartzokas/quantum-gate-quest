@@ -18,6 +18,12 @@ export default Object.freeze({
         multiTexture: true,
     },
 
+    scale: {
+        scaleMode: Phaser.ScaleManager.SHOW_ALL,
+        pageAlignHorizontally: true,
+        pageAlignVertically: true,
+    },
+
     gridsize: GRID_SIZE,
 
     player:{

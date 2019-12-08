@@ -47,10 +47,67 @@ export default class Player extends Phaser.Sprite {
 
     }
 
-    update(){
-        super.update(...arguments);
+    control(activeDirections){
+
         this.setNearestTile();
         this.setAdjacentTiles();
+        
+        // no active directions, stop
+        if (activeDirections.length===0){
+            if (this.currentDirection!==Phaser.NONE){
+                console.debug('update: no active direction so stopping');
+                this.stop();
+            }
+        }
+
+        // one active direction, move
+        else if (activeDirections.length===1){
+            const direction = activeDirections[0];
+
+            // if direction is new
+            if (this.currentDirection!==direction){
+                console.debug('update: one active direction',util.dirToString(direction));
+
+                // if direction is not blocked, align with walls in that direction
+                if (this.checkDirection(direction)){
+                    console.debug('update: active direction is not blocked, aligning');
+                    this.turn(direction);
+                }
+
+                // move even if that direction is blocked so that player can move closer to wall until collision
+                this.move(direction);
+            }
+        }
+        
+        // two+ active directions
+        else if (activeDirections.length>1){
+            const turning = activeDirections[0]; // where player wants to turn
+            const direction = activeDirections[1]; // last known valid direction traveling
+            
+            // if not already moving in turning direction
+            if (this.currentDirection!==turning){
+                console.debug('update: two+ active directions, turning:',util.dirToString(turning),', direction:',util.dirToString(direction));
+
+                // if player is ready to turn
+                if (this.checkDirection(turning)){
+                    console.debug('update: active turning direction is not blocked, aligning');
+
+                    // turn
+                    this.turn(turning);
+
+                    // move
+                    this.move(turning);
+
+                }
+                
+                // if player isn't ready to turn, and isn't already traveling, move
+                else if (this.currentDirection!==direction){
+                    console.debug('update: active turning direction is blocked, moving in secondary direction');
+
+                    this.move(direction);
+                }
+            }
+        }
     }
 
     move(direction) {

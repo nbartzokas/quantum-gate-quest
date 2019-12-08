@@ -27,9 +27,7 @@ Quest.prototype = {
 
         this.qubit = new Qubit();
 
-        this.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
-        this.scale.pageAlignHorizontally = true;
-        this.scale.pageAlignVertically = true;
+        Object.assign(this.scale,config.scale);
 
         Phaser.Canvas.setImageRenderingCrisp(this.game.canvas);
 
@@ -240,62 +238,8 @@ Quest.prototype = {
 
         const activeDirections = this.getDirectionKeys();
 
-        // no active directions, stop
-        if (activeDirections.length===0){
-            if (this.player.currentDirection!==Phaser.NONE){
-                console.debug('update: no active direction so stopping');
-                this.player.stop();
-            }
-        }
+        this.player.control(activeDirections);
 
-        // one active direction, move
-        else if (activeDirections.length===1){
-            const direction = activeDirections[0];
-
-            // if direction is new
-            if (this.player.currentDirection!==direction){
-                console.debug('update: one active direction',util.dirToString(direction));
-
-                // if direction is not blocked, align with walls in that direction
-                if (this.player.checkDirection(direction)){
-                    console.debug('update: active direction is not blocked, aligning');
-                    this.player.turn(direction);
-                }
-
-                // move even if that direction is blocked so that player can move closer to wall until collision
-                this.player.move(direction);
-            }
-        }
-        
-        // two+ active directions
-        else if (activeDirections.length>1){
-            const turning = activeDirections[0]; // where player wants to turn
-            const direction = activeDirections[1]; // last known valid direction traveling
-            
-            // if not already moving in turning direction
-            if (this.player.currentDirection!==turning){
-                console.debug('update: two+ active directions, turning:',util.dirToString(turning),', direction:',util.dirToString(direction));
-
-                // if player is ready to turn
-                if (this.player.checkDirection(turning)){
-                    console.debug('update: active turning direction is not blocked, aligning');
-
-                    // turn
-                    this.player.turn(turning);
-
-                    // move
-                    this.player.move(turning);
-
-                }
-                
-                // if player isn't ready to turn, and isn't already traveling, move
-                else if (this.player.currentDirection!==direction){
-                    console.debug('update: active turning direction is blocked, moving in secondary direction');
-
-                    this.player.move(direction);
-                }
-            }
-        }
     }
 
 };
