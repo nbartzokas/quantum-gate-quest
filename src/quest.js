@@ -1,75 +1,29 @@
-// import config from './config';
+import config from './config';
+import Qubit from './qubit';
 import util from './util';
-
-class Qubit {
-    constructor(){
-        this.x = 0;
-        this.y = 0;
-        this.z = 0;
-    }
-
-    /**
-     * Take a Z measurement
-     * Because game needs this function to be synchronous,
-     * z measurements are pre-computed during gate applications.
-     * Read functions return a random measurement from the 
-     * precomputed set.
-     * @returns {number} measurement
-     */
-    zRead(){
-        return this.z;
-    }
-    
-    /**
-     * Apply an X-Gate to the qubit
-     * @param {function} cb 
-     * @returns {object} JSON response
-     */
-    xGate(cb){
-        return fetch('/q/XGate')
-            .then(response => response.json())
-            .then(json => this.z=util.jobCountWinner(json)) // TODO: assumes Z measurement
-            .then(cb);
-    }
-};
 
 var Quest = function (game) {
 
     this.qubit = null;
-
     this.map = null;
     this.layerFloor = null;
     this.layerWalls = null;
     this.layerGates = null;
     this.layerReads = null;
     this.player = null;
-    this.qcircuit = null;
-    this.qbloch = null;
+    this.uiCircuit = null;
+    this.uiBloch = null;
 
-    this.gridsize = 64;
-    this.startPoint = {
-        x: 1.5*this.gridsize, 
-        y: 7.5*this.gridsize
-    }
+    this.tileOverlap = null; // holds any special tile the player is currently overlapping
+    
+    this.tileNearestPlayer = new Phaser.Point();
+    this.turnPoint = new Phaser.Point(); // center point of tile player is turning to
+    this.turnThreshold = config.gridsize / 2; // fuzziness threshold for testing when player aligns with turnpoint
 
-    this.tilesEmpty = [-1,0];
-    this.tileWall = 4;
-    this.tileGate = 75;
-    this.tileRead = 41;
+    this.tilesAdjacentPlayer = [ null, null, null, null, null ];
 
-    this.tileOverlap = null;
-
-    this.speed = 200;
-    this.threshold = this.gridsize/2;
-
-    this.marker = new Phaser.Point();
-    this.turnPoint = new Phaser.Point();
-
-    this.directions = [ null, null, null, null, null ];
-    this.opposites = [ Phaser.NONE, Phaser.RIGHT, Phaser.LEFT, Phaser.DOWN, Phaser.UP ];
-
-    this.currentDirection = Phaser.NONE;
-    this.activeDirections = [];
+    this.playerCurrentDirection = Phaser.NONE;
+    this.inputActiveDirections = [];
 
 };
 
@@ -117,15 +71,15 @@ Quest.prototype = {
         this.layerFloor = this.map.createLayer('floor');
 
         this.layerWalls = this.map.createLayer('walls');
-        this.map.setCollisionByExclusion(this.tilesEmpty,true/*collides*/,this.layerWalls);
+        this.map.setCollisionByExclusion(config.tiles.empty,true/*collides*/,this.layerWalls);
 
         this.layerGates = this.map.createLayer('gates');
         this.layerReads = this.map.createLayer('reads');
 
         this.gates = this.add.physicsGroup();
-        this.map.createFromTiles(this.tileGate, -1, 'spritesheet', this.layerGates, this.gates);
+        this.map.createFromTiles(config.tiles.gate, -1, 'spritesheet', this.layerGates, this.gates);
         this.gates.children.forEach( tile=>{
-            tile.frame=this.tileGate; // https://github.com/photonstorm/phaser/issues/2175
+            tile.frame=config.tiles.gate; // https://github.com/photonstorm/phaser/issues/2175
         });
 
         this.burst = this.add.sprite(0,0,'burst');
@@ -136,20 +90,18 @@ Quest.prototype = {
         this.burst.animations.add('burst');
         this.burst.sound = game.add.audio('burst_sound');
 
-        //  Position Player at grid location 14x17 (the +8 accounts for his anchor)
-        this.player = this.add.sprite(this.startPoint.x, this.startPoint.y, 'spritesheet', 66);
+        this.player = this.add.sprite(config.player.startPoint.x, config.player.startPoint.y, 'spritesheet', 66);
         this.player.anchor.set(0.5);
         this.player.animations.add('walk-left',  [94,95,94,96], 10, true);
         this.player.animations.add('walk-right', [91,92,91,93], 10, true);
         this.player.animations.add('walk-up',    [68,69,68,70], 10, true);
         this.player.animations.add('walk-down',  [65,66,65,67], 10, true);
-
         this.physics.arcade.enable(this.player);
 
         this.reads = this.add.physicsGroup();
-        this.map.createFromTiles(this.tileRead, -1, 'spritesheet', this.layerReads, this.reads);
+        this.map.createFromTiles(config.tiles.read, -1, 'spritesheet', this.layerReads, this.reads);
         this.reads.children.forEach( tile=>{
-            tile.frame=this.tileRead; // https://github.com/photonstorm/phaser/issues/2175
+            tile.frame=config.tiles.read; // https://github.com/photonstorm/phaser/issues/2175
             tile.body.immovable=true;
             tile.body.offset.set(5,5);
             tile.body.width-=10;
@@ -178,9 +130,9 @@ Quest.prototype = {
         };
 
         // q ui
-        this.qbloch = this.add.image(1280,0,'qbloch');
-        this.qcircuit = this.add.image(1280,480,'qcircuit');
-        this.qbloch_zread_label = this.add.image(1504,400,'spritesheet',this.tileRead);
+        this.uiBloch = this.add.image(1280,0,'qbloch');
+        this.uiCircuit = this.add.image(1280,480,'qcircuit');
+        this.uiBloch_zread_label = this.add.image(1504,400,'spritesheet',config.tiles.read);
 
     },
 
@@ -192,8 +144,8 @@ Quest.prototype = {
             console.log('reloadDynamicAssets load completed');
             // TODO: handle load failure
             // update q images 
-            this.qbloch.loadTexture('qbloch');
-            this.qcircuit.loadTexture('qcircuit');
+            this.uiBloch.loadTexture('qbloch');
+            this.uiCircuit.loadTexture('qcircuit');
         });
         this.load.start();
     },
@@ -206,45 +158,45 @@ Quest.prototype = {
             [this.cursors.down,  Phaser.DOWN],
         ];
         for (let [key,direction] of keysAndDirections){
-            const index = this.activeDirections.indexOf(direction);
+            const index = this.inputActiveDirections.indexOf(direction);
             // if the key is down and not detected and stored yet, store it
             if (key.isDown && index===-1){
-                this.activeDirections.splice(0,0,direction);
-                console.debug('this.activeDirections',this.activeDirections);
+                this.inputActiveDirections.splice(0,0,direction);
+                console.debug('this.inputActiveDirections',this.inputActiveDirections);
             }
             // if the key is stored no longer down, remove it
             else if (!key.isDown && index!==-1){
-                this.activeDirections.splice(index,1);
-                console.debug('this.activeDirections',this.activeDirections);
+                this.inputActiveDirections.splice(index,1);
+                console.debug('this.inputActiveDirections',this.inputActiveDirections);
             }
         }
-        return this.activeDirections;
+        return this.inputActiveDirections;
     },
 
-    setMarker: function(){
-        this.turnPoint.x = (this.marker.x * this.gridsize) + (this.gridsize / 2);
-        this.turnPoint.y = (this.marker.y * this.gridsize) + (this.gridsize / 2);
+    setTurnPoint: function(){
+        this.turnPoint.x = (this.tileNearestPlayer.x * config.gridsize) + (config.gridsize / 2);
+        this.turnPoint.y = (this.tileNearestPlayer.y * config.gridsize) + (config.gridsize / 2);
     },
 
     checkDirection: function (turnTo) {
 
-        if (this.directions[turnTo] === null){
-            console.debug('checkDirection: no valid tile that way', util.dirToString(turnTo), this.directions[turnTo] );
+        if (this.tilesAdjacentPlayer[turnTo] === null){
+            console.debug('checkDirection: no valid tile that way', util.dirToString(turnTo), this.tilesAdjacentPlayer[turnTo] );
             return false;
         }
 
-        else if ( this.tilesEmpty.indexOf(this.directions[turnTo].index) === -1 ){
-            console.debug('checkDirection: no floor tile that way', util.dirToString(turnTo), this.directions[turnTo] );
+        else if ( config.tiles.empty.indexOf(this.tilesAdjacentPlayer[turnTo].index) === -1 ){
+            console.debug('checkDirection: no floor tile that way', util.dirToString(turnTo), this.tilesAdjacentPlayer[turnTo] );
             return false;
         }
 
-        else if (this.currentDirection === this.opposites[turnTo]){
-            console.debug('checkDirection: permitting turn around', util.dirToString(turnTo), this.directions[turnTo] );
+        else if (this.playerCurrentDirection === util.tileOpposite(turnTo)){
+            console.debug('checkDirection: permitting turn around', util.dirToString(turnTo), this.tilesAdjacentPlayer[turnTo] );
             return true;
         }
 
         else{
-            console.debug('checkDirection: permitting turn', util.dirToString(turnTo), this.directions[turnTo] );
+            console.debug('checkDirection: permitting turn', util.dirToString(turnTo), this.tilesAdjacentPlayer[turnTo] );
             return true;
         }
 
@@ -256,10 +208,8 @@ Quest.prototype = {
         var cx = Math.floor(this.player.x);
         var cy = Math.floor(this.player.y);
 
-        //  This needs a threshold, because at high speeds you can't turn because the coordinates skip past
-        console.debug(cx, this.turnPoint.x, this.threshold, cy, this.turnPoint.y, this.threshold);
-        if (!this.math.fuzzyEqual(cx, this.turnPoint.x, this.threshold) || !this.math.fuzzyEqual(cy, this.turnPoint.y, this.threshold))
-        {
+        console.debug(cx, this.turnPoint.x, this.turnThreshold, cy, this.turnPoint.y, this.turnThreshold);
+        if (!this.math.fuzzyEqual(cx, this.turnPoint.x, this.turnThreshold) || !this.math.fuzzyEqual(cy, this.turnPoint.y, this.turnThreshold)){
             return false;
         }
 
@@ -281,14 +231,14 @@ Quest.prototype = {
     stopPlayer: function () {
         console.debug('stop');
         this.player.body.velocity.set(0);
-        this.currentDirection=Phaser.NONE;
+        this.playerCurrentDirection=Phaser.NONE;
         this.player.animations.stop(null,true);
     },
 
     movePlayer: function (direction) {
         console.debug('move', util.dirToString(direction) );
 
-        var speed = this.speed;
+        var speed = config.player.speed;
 
         if (direction === Phaser.LEFT || direction === Phaser.UP) {
             speed = -speed;
@@ -315,7 +265,7 @@ Quest.prototype = {
             this.player.play('walk-down');
         }
 
-        this.currentDirection = direction;
+        this.playerCurrentDirection = direction;
 
     },
 
@@ -390,20 +340,20 @@ Quest.prototype = {
         this.physics.arcade.overlap(this.player, this.gates, this.handleOverlapGate, null, this);
         this.physics.arcade.overlap(this.player, this.reads, this.handleOverlapRead, null, this);
 
-        this.marker.x = this.math.snapToFloor(Math.floor(this.player.x), this.gridsize) / this.gridsize;
-        this.marker.y = this.math.snapToFloor(Math.floor(this.player.y), this.gridsize) / this.gridsize;
+        this.tileNearestPlayer.x = this.math.snapToFloor(Math.floor(this.player.x), config.gridsize) / config.gridsize;
+        this.tileNearestPlayer.y = this.math.snapToFloor(Math.floor(this.player.y), config.gridsize) / config.gridsize;
 
         //  Update our grid sensors
-        this.directions[Phaser.LEFT]  = this.map.getTileLeft(this.layerWalls.index, this.marker.x, this.marker.y);
-        this.directions[Phaser.RIGHT] = this.map.getTileRight(this.layerWalls.index, this.marker.x, this.marker.y);
-        this.directions[Phaser.UP]    = this.map.getTileAbove(this.layerWalls.index, this.marker.x, this.marker.y);
-        this.directions[Phaser.DOWN]  = this.map.getTileBelow(this.layerWalls.index, this.marker.x, this.marker.y);
+        this.tilesAdjacentPlayer[Phaser.LEFT]  = this.map.getTileLeft(this.layerWalls.index, this.tileNearestPlayer.x, this.tileNearestPlayer.y);
+        this.tilesAdjacentPlayer[Phaser.RIGHT] = this.map.getTileRight(this.layerWalls.index, this.tileNearestPlayer.x, this.tileNearestPlayer.y);
+        this.tilesAdjacentPlayer[Phaser.UP]    = this.map.getTileAbove(this.layerWalls.index, this.tileNearestPlayer.x, this.tileNearestPlayer.y);
+        this.tilesAdjacentPlayer[Phaser.DOWN]  = this.map.getTileBelow(this.layerWalls.index, this.tileNearestPlayer.x, this.tileNearestPlayer.y);
 
         const activeDirections = this.getDirectionKeys();
 
         // no active directions, stop
         if (activeDirections.length===0){
-            if (this.currentDirection!==Phaser.NONE){
+            if (this.playerCurrentDirection!==Phaser.NONE){
                 console.debug('update: no active direction so stopping');
                 this.stopPlayer();
             }
@@ -414,13 +364,13 @@ Quest.prototype = {
             const direction = activeDirections[0];
 
             // if direction is new
-            if (this.currentDirection!==direction){
+            if (this.playerCurrentDirection!==direction){
                 console.debug('update: one active direction',util.dirToString(direction));
 
                 // if direction is not blocked, align with walls in that direction
                 if (this.checkDirection(direction)){
                     console.debug('update: active direction is not blocked, aligning');
-                    this.setMarker();
+                    this.setTurnPoint();
                     this.turn(direction);
                 }
 
@@ -435,7 +385,7 @@ Quest.prototype = {
             const direction = activeDirections[1]; // last known valid direction traveling
             
             // if not already moving in turning direction
-            if (this.currentDirection!==turning){
+            if (this.playerCurrentDirection!==turning){
                 console.debug('update: two+ active directions, turning:',util.dirToString(turning),', direction:',util.dirToString(direction));
 
                 // if player is ready to turn
@@ -443,7 +393,7 @@ Quest.prototype = {
                     console.debug('update: active turning direction is not blocked, aligning');
 
                     // turn
-                    this.setMarker();
+                    this.setTurnPoint();
                     this.turn(turning);
 
                     // move
@@ -452,7 +402,7 @@ Quest.prototype = {
                 }
                 
                 // if player isn't ready to turn, and isn't already traveling, move
-                else if (this.currentDirection!==direction){
+                else if (this.playerCurrentDirection!==direction){
                     console.debug('update: active turning direction is blocked, moving in secondary direction');
 
                     this.movePlayer(direction);

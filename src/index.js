@@ -4,10 +4,11 @@ import PIXI from 'expose-loader?PIXI!phaser-ce/build/custom/pixi.js';
 import p2 from 'expose-loader?p2!phaser-ce/build/custom/p2.js';
 import Phaser from 'expose-loader?Phaser!phaser-ce/build/custom/phaser-split.js';
 
+import config from './config';
 import Quest from './quest';
 
 window.addEventListener('load',function(){
-    var game = new Phaser.Game(2560, 1280, Phaser.AUTO);
+    var game = new Phaser.Game(config.game);
     game.state.add('Game', Quest, true);
     window.game = game;
 });

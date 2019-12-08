@@ -31,4 +31,9 @@ export default {
                '';
     },
 
+    tileOpposite: function(tile){
+        const opposites = [ Phaser.NONE, Phaser.RIGHT, Phaser.LEFT, Phaser.DOWN, Phaser.UP ];
+        return opposites[tile];
+    },
+
 };
