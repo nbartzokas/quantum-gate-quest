@@ -46,6 +46,22 @@ export default Object.freeze({
         turnThreshold: GRID_SIZE / 2,
     },
 
+    burst:{
+        sprite:{
+            key: 'burst',
+            anchor: 0.5,
+            x: 0, 
+            y: 0,
+            width: 256,
+            height: 256,
+            tint: 0xffffff,
+        },
+        animations:[
+            { name: 'burst' },
+        ],
+        audio:'burst_sound',
+    },
+
     tiles:{
         empty: [-1,0],
         wall: 4,

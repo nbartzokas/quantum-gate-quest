@@ -1,4 +1,7 @@
+import merge from 'deepmerge';
+
 import config from './config';
+import Burst from './burst';
 import Player from './player';
 import Qubit from './qubit';
 import util from './util';
@@ -74,19 +77,17 @@ Quest.prototype = {
             tile.frame=config.tiles.gate; // https://github.com/photonstorm/phaser/issues/2175
         });
 
-        this.burst = this.add.sprite(0,0,'burst');
-        this.burst.anchor.set(0.5);
-        this.burst.tint = 0xffdd00;
-        this.burst.width = 256;
-        this.burst.height = 256;
-        this.burst.animations.add('burst');
-        this.burst.sound = game.add.audio('burst_sound');
+        this.burst = Burst.create(this, Object.freeze(merge(config.burst,{
+            sprite:{
+                tint: 0xffdd00,
+            }
+        })));
 
-        this.player = Player.create( this, Object.freeze(Object.assign({
+        this.player = Player.create( this, Object.freeze(Object.assign({},config.player,{
             // TODO: decouple
             map: this.map,
             layerWalls: this.layerWalls,
-        },config.player)) );
+        })));
 
         this.reads = this.add.physicsGroup();
         this.map.createFromTiles(config.tiles.read, -1, 'spritesheet', this.layerReads, this.reads);
@@ -183,10 +184,8 @@ Quest.prototype = {
                 this.player.tint = z * 0xff0000 || 0xffffff;
     
                 // move burst here and play
-                this.burst.x = tile.x + tile.width/2;
-                this.burst.y = tile.y + tile.height/2;
-                this.burst.play('burst');
-                this.burst.sound.play();
+                this.burst.position.set( tile.x + tile.width/2, tile.y + tile.height/2 );
+                this.burst.play();
 
                 this.reloadDynamicAssets();
 
