@@ -23,7 +23,6 @@ var Quest = function (game) {
 
     this.tilesAdjacentPlayer = [ null, null, null, null, null ];
 
-    this.playerCurrentDirection = Phaser.NONE;
     this.inputActiveDirections = [];
 
 };
@@ -185,7 +184,7 @@ Quest.prototype = {
             return false;
         }
 
-        else if (this.playerCurrentDirection === util.tileOpposite(turnTo)){
+        else if (this.player.currentDirection === util.tileOpposite(turnTo)){
             console.debug('checkDirection: permitting turn around', util.dirToString(turnTo), this.tilesAdjacentPlayer[turnTo] );
             return true;
         }
@@ -220,47 +219,6 @@ Quest.prototype = {
         }
 
         return true;
-
-    },
-
-    stopPlayer: function () {
-        console.debug('stop');
-        this.player.body.velocity.set(0);
-        this.playerCurrentDirection=Phaser.NONE;
-        this.player.animations.stop(null,true);
-    },
-
-    movePlayer: function (direction) {
-        console.debug('move', util.dirToString(direction) );
-
-        var speed = config.player.speed;
-
-        if (direction === Phaser.LEFT || direction === Phaser.UP) {
-            speed = -speed;
-        }
-
-        if (direction === Phaser.LEFT || direction === Phaser.RIGHT) {
-            this.player.body.velocity.x = speed;
-            this.player.body.velocity.y = 0;
-        } else {
-            this.player.body.velocity.x = 0;
-            this.player.body.velocity.y = speed;
-        }
-
-        if (direction === Phaser.LEFT){
-            this.player.play('walk-left');
-        }
-        else if (direction === Phaser.RIGHT){
-            this.player.play('walk-right');
-        }
-        else if (direction === Phaser.UP){
-            this.player.play('walk-up');
-        }
-        else if (direction === Phaser.DOWN){
-            this.player.play('walk-down');
-        }
-
-        this.playerCurrentDirection = direction;
 
     },
 
@@ -348,9 +306,9 @@ Quest.prototype = {
 
         // no active directions, stop
         if (activeDirections.length===0){
-            if (this.playerCurrentDirection!==Phaser.NONE){
+            if (this.player.currentDirection!==Phaser.NONE){
                 console.debug('update: no active direction so stopping');
-                this.stopPlayer();
+                this.player.stop();
             }
         }
 
@@ -359,7 +317,7 @@ Quest.prototype = {
             const direction = activeDirections[0];
 
             // if direction is new
-            if (this.playerCurrentDirection!==direction){
+            if (this.player.currentDirection!==direction){
                 console.debug('update: one active direction',util.dirToString(direction));
 
                 // if direction is not blocked, align with walls in that direction
@@ -370,7 +328,7 @@ Quest.prototype = {
                 }
 
                 // move even if that direction is blocked so that player can move closer to wall until collision
-                this.movePlayer(direction);
+                this.player.move(direction);
             }
         }
         
@@ -380,7 +338,7 @@ Quest.prototype = {
             const direction = activeDirections[1]; // last known valid direction traveling
             
             // if not already moving in turning direction
-            if (this.playerCurrentDirection!==turning){
+            if (this.player.currentDirection!==turning){
                 console.debug('update: two+ active directions, turning:',util.dirToString(turning),', direction:',util.dirToString(direction));
 
                 // if player is ready to turn
@@ -392,15 +350,15 @@ Quest.prototype = {
                     this.turn(turning);
 
                     // move
-                    this.movePlayer(turning);
+                    this.player.move(turning);
 
                 }
                 
                 // if player isn't ready to turn, and isn't already traveling, move
-                else if (this.playerCurrentDirection!==direction){
+                else if (this.player.currentDirection!==direction){
                     console.debug('update: active turning direction is blocked, moving in secondary direction');
 
-                    this.movePlayer(direction);
+                    this.player.move(direction);
                 }
             }
         }
