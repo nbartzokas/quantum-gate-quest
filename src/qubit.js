@@ -31,4 +31,4 @@ export default class Qubit {
             .then(json => this.z=util.jobCountWinner(json)) // TODO: assumes Z measurement
             .then(cb);
     }
-};
+}

@@ -26,4 +26,4 @@ export default class Score extends Phaser.Text{
     toString(){
         return this.prefix+this._value;
     }
-};
+}

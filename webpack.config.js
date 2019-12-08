@@ -12,5 +12,26 @@ module.exports = {
         publicPath: '/assets/scripts/',
         contentBase: path.join(__dirname, 'public'),
         port: 3000
-    }
+    },
+    module: {
+        rules: [
+            {
+                test: /\.jsx?$/,
+                enforce: 'pre',
+                loader: 'eslint-loader',
+                exclude: /node_modules/,
+                options: {
+                    emitWarning: true,
+                }
+            },
+            {
+                test: /\.js$/,
+                loader: 'babel-loader',
+                exclude: /node_modules/,
+                options: {
+                    presets: ['@babel/preset-env']
+                }
+            }
+        ]
+    },
 };

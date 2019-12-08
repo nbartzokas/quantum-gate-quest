@@ -1,3 +1,9 @@
+// Phaser CE + Webpack loading
+// https://github.com/photonstorm/phaser-ce/blob/master/resources/Project%20Templates/Webpack/src/index.js
+import PIXI from 'expose-loader?PIXI!phaser-ce/build/custom/pixi.js';
+import p2 from 'expose-loader?p2!phaser-ce/build/custom/p2.js';
+import Phaser from 'expose-loader?Phaser!phaser-ce/build/custom/phaser-split.js';
+
 import merge from 'deepmerge';
 
 import config from './config';
@@ -5,9 +11,8 @@ import Burst from './burst';
 import Player from './player';
 import Qubit from './qubit';
 import Score from './score';
-import util from './util';
 
-var Quest = function (game) {
+var Quest = function () {
 
     this.qubit = null;
     this.map = null;
@@ -106,7 +111,7 @@ Quest.prototype = {
         this.powerup.width = 256;
         this.powerup.height = 256;
         this.powerup.animations.add('powerup');
-        this.powerup.sound = game.add.audio('powerup_sound');
+        this.powerup.sound = this.add.audio('powerup_sound');
 
         this.cursors = this.input.keyboard.createCursorKeys();
 
@@ -163,6 +168,7 @@ Quest.prototype = {
     },
 
     handleOverlapGate: function (sprite,tile) {
+        console.debug('handleOverlapGate',sprite,tile);
         if (!this.tileOverlap){
     
             console.log('applying xGate');
@@ -213,6 +219,7 @@ Quest.prototype = {
         }
     },
     handleCollideRead: function (sprite,tile){
+        console.log('handleCollideRead',sprite,tile);
         return this.qubit.zRead()===0;
     },
 
