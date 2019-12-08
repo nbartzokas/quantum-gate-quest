@@ -62,6 +62,17 @@ export default Object.freeze({
         audio:'burst_sound',
     },
 
+    score: {
+        x:0,
+        y:0, 
+        text:'Score: ',
+        style: {
+            font: '65px Arial',
+            fill: '#ff0044',
+            align: 'left'
+        }
+    },
+
     tiles:{
         empty: [-1,0],
         wall: 4,

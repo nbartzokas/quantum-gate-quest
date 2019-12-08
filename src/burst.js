@@ -9,9 +9,11 @@ import config from './config';
 export default class Burst extends Phaser.Sprite {
 
     static create(state,options){
+        const game = options.game || state.game;
+        const group = options.group || state.world;
 
         // sprite
-        const burst = state.world.add(new Burst(state.game, options.sprite.x, options.sprite.y, options.sprite.key, options.sprite.frame));
+        const burst = group.add(new Burst(game, options.sprite.x, options.sprite.y, options.sprite.key, options.sprite.frame));
         burst.anchor.set(options.sprite.anchor);
         burst.width = options.sprite.width;
         burst.height = options.sprite.height;

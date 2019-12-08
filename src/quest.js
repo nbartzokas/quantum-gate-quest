@@ -4,6 +4,7 @@ import config from './config';
 import Burst from './burst';
 import Player from './player';
 import Qubit from './qubit';
+import Score from './score';
 import util from './util';
 
 var Quest = function (game) {
@@ -109,16 +110,7 @@ Quest.prototype = {
 
         this.cursors = this.input.keyboard.createCursorKeys();
 
-        this.score = {
-            value:0,
-            toString: function(){ return 'Score: '+this.value; },
-            text: game.add.text(0,0, 'Score: 0', {
-                font: '65px Arial',
-                fill: '#ff0044',
-                align: 'left'
-            }),
-            update: function(){ this.text.setText(this.toString()); }
-        };
+        this.score = Score.create(this, config.score);
 
         // q ui
         this.uiBloch = this.add.image(1280,0,'qbloch');

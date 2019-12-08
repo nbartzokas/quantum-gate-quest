@@ -19,9 +19,11 @@ export default class Player extends Phaser.Sprite {
         this.adjacentTiles = [ null, null, null, null, null ];
     }
     static create(state,options){
+        const game = options.game || state.game;
+        const group = options.group || state.world;
 
         // sprite
-        const player = state.world.add(new Player(state.game, options.sprite.x, options.sprite.y, options.sprite.key, options.sprite.frame));
+        const player = group.add(new Player(game, options.sprite.x, options.sprite.y, options.sprite.key, options.sprite.frame));
         player.anchor.set(options.sprite.anchor);
 
         // animations
