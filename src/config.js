@@ -6,7 +6,7 @@ import Phaser from 'expose-loader?Phaser!phaser-ce/build/custom/phaser-split.js'
 
 const GRID_SIZE = 64;
 
-export default {
+export default Object.freeze({
 
     // phaser-ce game
     // see: https://photonstorm.github.io/phaser-ce/Phaser.Game.html
@@ -37,6 +37,7 @@ export default {
         ],
         physics: true,
         speed: 200,
+        turnThreshold: GRID_SIZE / 2,
     },
 
     tiles:{
@@ -46,4 +47,4 @@ export default {
         read: 41,
     },
 
-};
+});

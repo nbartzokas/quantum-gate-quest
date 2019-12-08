@@ -16,12 +16,6 @@ var Quest = function (game) {
     this.uiBloch = null;
 
     this.tileOverlap = null; // holds any special tile the player is currently overlapping
-    
-    this.tileNearestPlayer = new Phaser.Point();
-    this.turnPoint = new Phaser.Point(); // center point of tile player is turning to
-    this.turnThreshold = config.gridsize / 2; // fuzziness threshold for testing when player aligns with turnpoint
-
-    this.tilesAdjacentPlayer = [ null, null, null, null, null ];
 
     this.inputActiveDirections = [];
 
@@ -90,7 +84,11 @@ Quest.prototype = {
         this.burst.animations.add('burst');
         this.burst.sound = game.add.audio('burst_sound');
 
-        this.player = Player.create( this, config.player );
+        this.player = Player.create( this, Object.freeze(Object.assign({
+            // TODO: decouple
+            map: this.map,
+            layerWalls: this.layerWalls,
+        },config.player)) );
 
         this.reads = this.add.physicsGroup();
         this.map.createFromTiles(config.tiles.read, -1, 'spritesheet', this.layerReads, this.reads);
@@ -167,61 +165,6 @@ Quest.prototype = {
         return this.inputActiveDirections;
     },
 
-    setTurnPoint: function(){
-        this.turnPoint.x = (this.tileNearestPlayer.x * config.gridsize) + (config.gridsize / 2);
-        this.turnPoint.y = (this.tileNearestPlayer.y * config.gridsize) + (config.gridsize / 2);
-    },
-
-    checkDirection: function (turnTo) {
-
-        if (this.tilesAdjacentPlayer[turnTo] === null){
-            console.debug('checkDirection: no valid tile that way', util.dirToString(turnTo), this.tilesAdjacentPlayer[turnTo] );
-            return false;
-        }
-
-        else if ( config.tiles.empty.indexOf(this.tilesAdjacentPlayer[turnTo].index) === -1 ){
-            console.debug('checkDirection: no floor tile that way', util.dirToString(turnTo), this.tilesAdjacentPlayer[turnTo] );
-            return false;
-        }
-
-        else if (this.player.currentDirection === util.tileOpposite(turnTo)){
-            console.debug('checkDirection: permitting turn around', util.dirToString(turnTo), this.tilesAdjacentPlayer[turnTo] );
-            return true;
-        }
-
-        else{
-            console.debug('checkDirection: permitting turn', util.dirToString(turnTo), this.tilesAdjacentPlayer[turnTo] );
-            return true;
-        }
-
-    },
-
-    turn: function (turnTo) {
-        console.debug('attempting turn',turnTo);
-
-        var cx = Math.floor(this.player.x);
-        var cy = Math.floor(this.player.y);
-
-        console.debug(cx, this.turnPoint.x, this.turnThreshold, cy, this.turnPoint.y, this.turnThreshold);
-        if (!this.math.fuzzyEqual(cx, this.turnPoint.x, this.turnThreshold) || !this.math.fuzzyEqual(cy, this.turnPoint.y, this.turnThreshold)){
-            return false;
-        }
-
-        console.debug('turning',turnTo);
-
-        //  Grid align before turning
-        if (turnTo===Phaser.LEFT||turnTo===Phaser.RIGHT){
-            this.player.y = this.turnPoint.y;
-            this.player.body.reset(this.turnPoint.x, this.player.y);
-        }else if (turnTo===Phaser.UP||turnTo===Phaser.DOWN){
-            this.player.x = this.turnPoint.x;
-            this.player.body.reset(this.turnPoint.x, this.player.y);
-        }
-
-        return true;
-
-    },
-
     checkOverlap: function checkOverlap(spriteA, spriteB) {
         var boundsA = spriteA.getBounds();
         var boundsB = spriteB.getBounds();
@@ -293,14 +236,7 @@ Quest.prototype = {
         this.physics.arcade.overlap(this.player, this.gates, this.handleOverlapGate, null, this);
         this.physics.arcade.overlap(this.player, this.reads, this.handleOverlapRead, null, this);
 
-        this.tileNearestPlayer.x = this.math.snapToFloor(Math.floor(this.player.x), config.gridsize) / config.gridsize;
-        this.tileNearestPlayer.y = this.math.snapToFloor(Math.floor(this.player.y), config.gridsize) / config.gridsize;
-
-        //  Update our grid sensors
-        this.tilesAdjacentPlayer[Phaser.LEFT]  = this.map.getTileLeft(this.layerWalls.index, this.tileNearestPlayer.x, this.tileNearestPlayer.y);
-        this.tilesAdjacentPlayer[Phaser.RIGHT] = this.map.getTileRight(this.layerWalls.index, this.tileNearestPlayer.x, this.tileNearestPlayer.y);
-        this.tilesAdjacentPlayer[Phaser.UP]    = this.map.getTileAbove(this.layerWalls.index, this.tileNearestPlayer.x, this.tileNearestPlayer.y);
-        this.tilesAdjacentPlayer[Phaser.DOWN]  = this.map.getTileBelow(this.layerWalls.index, this.tileNearestPlayer.x, this.tileNearestPlayer.y);
+        // this.player.update();
 
         const activeDirections = this.getDirectionKeys();
 
@@ -321,10 +257,9 @@ Quest.prototype = {
                 console.debug('update: one active direction',util.dirToString(direction));
 
                 // if direction is not blocked, align with walls in that direction
-                if (this.checkDirection(direction)){
+                if (this.player.checkDirection(direction)){
                     console.debug('update: active direction is not blocked, aligning');
-                    this.setTurnPoint();
-                    this.turn(direction);
+                    this.player.turn(direction);
                 }
 
                 // move even if that direction is blocked so that player can move closer to wall until collision
@@ -342,12 +277,11 @@ Quest.prototype = {
                 console.debug('update: two+ active directions, turning:',util.dirToString(turning),', direction:',util.dirToString(direction));
 
                 // if player is ready to turn
-                if (this.checkDirection(turning)){
+                if (this.player.checkDirection(turning)){
                     console.debug('update: active turning direction is not blocked, aligning');
 
                     // turn
-                    this.setTurnPoint();
-                    this.turn(turning);
+                    this.player.turn(turning);
 
                     // move
                     this.player.move(turning);
