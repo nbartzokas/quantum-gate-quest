@@ -23,6 +23,7 @@ var Quest = function () {
     this.player = null;
     this.uiCircuit = null;
     this.uiBloch = null;
+    this.music = null;
 
     this.tileOverlap = null; // holds any special tile the player is currently overlapping
 
@@ -61,6 +62,12 @@ Quest.prototype = {
         // quantum ui
         this.load.image('qcircuit', 'draw.png?nocache='+Date.now(),true);
         this.load.image('qbloch', 'bloch.png?nocache='+Date.now(),true);
+
+        // background music
+        this.load.audio('bgmusic', ['assets/sounds/Juhani Junkala [Chiptune Adventures] 1. Stage 1.ogg']);
+
+        // ui icons
+        this.load.spritesheet('icons','assets/sprites/icons.png',50,50);
 
     },
 
@@ -120,7 +127,35 @@ Quest.prototype = {
         // q ui
         this.uiBloch = this.add.image(1280,0,'qbloch');
         this.uiCircuit = this.add.image(1280,480,'qcircuit');
-        this.uiBloch_zread_label = this.add.image(1504,400,'spritesheet',config.tiles.read);
+
+        // backgroud music
+        this.music = this.add.audio('bgmusic');
+        this.music.loop=true;
+        this.music.play();
+
+        // audio controls
+        const iconMute = 140;
+        const iconUnmute = 120;
+        this.sound.mute = false;
+        try {
+            this.sound.mute = JSON.parse(localStorage.getItem('qgq:mute'));
+        }catch(e){
+            console.debug('qgq mute setting note found');
+        }
+        this.muteBtn = this.add.button(this.world.centerX - 95, 400, 'icons', ()=>{
+            this.sound.mute = !this.sound.mute;
+            localStorage.setItem('qgq:mute', this.sound.mute);
+            if (this.sound.mute){
+                this.muteBtn.setFrames(iconMute,iconMute,iconUnmute,iconMute);
+            }else{
+                this.muteBtn.setFrames(iconUnmute,iconUnmute,iconMute,iconUnmute);
+            }
+        }, this, iconMute, iconUnmute, iconMute);
+        if (this.sound.mute){
+            this.muteBtn.setFrames(iconMute,iconMute,iconUnmute,iconMute);
+        }else{
+            this.muteBtn.setFrames(iconUnmute,iconUnmute,iconMute,iconUnmute);
+        }
 
     },
 
