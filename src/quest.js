@@ -8,6 +8,7 @@ import merge from 'deepmerge';
 
 import config from './config';
 import Burst from './burst';
+import FilterRemoveWhite from './filterRemoveWhite';
 import Player from './player';
 import Qubit from './qubit';
 import Score from './score';
@@ -55,9 +56,9 @@ Quest.prototype = {
         this.load.spritesheet('powerup', 'assets/sprites/burst.png', 100, 100);
         this.load.audio('powerup_sound','assets/sounds/478342__joao-janz__bouncing-power-up-1-5.wav');
 
-        this.load.spritesheet('spritesheet', 'assets/tiles/tilesheet.png', 64, 64);
-        this.load.image('tiles', 'assets/tiles/tilesheet.png');
-        this.load.tilemap('map', 'assets/maps/map.json', null, Phaser.Tilemap.TILED_JSON);
+        this.load.spritesheet('spritesheet', 'assets/tiles/tilesheet.png?nocache='+Date.now(), 64, 64);
+        this.load.image('tiles', 'assets/tiles/tilesheet.png?nocache='+Date.now());
+        this.load.tilemap('map', 'assets/maps/map.json?nocache='+Date.now(), null, Phaser.Tilemap.TILED_JSON);
 
         // quantum ui
         this.load.image('qcircuit', 'draw.png?nocache='+Date.now(),true);
@@ -76,43 +77,52 @@ Quest.prototype = {
         this.map = this.add.tilemap('map');
         this.map.addTilesetImage('tileset', 'tiles');
 
-        this.layerFloor = this.map.createLayer('floor');
+        const mapW = this.map.widthInPixels;
+        const mapH = this.map.heightInPixels;
 
-        this.layerWalls = this.map.createLayer('walls');
+        this.mapLayers = this.add.group();
+        // this.mapLayers.x = 0;
+        // this.mapLayers.y = 288;
+
+        this.layerFloor = this.map.createLayer('floor',mapW,mapH,this.mapLayers);
+
+        this.layerWalls = this.map.createLayer('walls',mapW,mapH,this.mapLayers);
         this.map.setCollisionByExclusion(config.tiles.empty,true/*collides*/,this.layerWalls);
 
-        this.layerGates = this.map.createLayer('gates');
-        this.layerReads = this.map.createLayer('reads');
+        this.layerGates = this.map.createLayer('gates',mapW,mapH,this.mapLayers);
+        this.layerReads = this.map.createLayer('reads',mapW,mapH,this.mapLayers);
 
-        this.gates = this.add.physicsGroup();
+        this.gates = this.add.physicsGroup(Phaser.Physics.ARCADE,this.mapLayers);
         this.map.createFromTiles(config.tiles.gate, -1, 'spritesheet', this.layerGates, this.gates);
         this.gates.children.forEach( tile=>{
-            tile.frame=config.tiles.gate; // https://github.com/photonstorm/phaser/issues/2175
+            tile.frame=config.frames.gate; // https://github.com/photonstorm/phaser/issues/2175
+            // tile.alpha=0.5;
         });
 
-        this.burst = Burst.create(this, Object.freeze(merge(config.burst,{
-            sprite:{
-                tint: 0xffdd00,
-            }
-        })));
+        this.burst = Burst.create(this, Object.assign(
+            {},
+            {
+                group: this.mapLayers,
+            },
+            merge(config.burst,{
+                sprite:{
+                    tint: 0x00ff00,
+                }
+            })
+        ));
 
-        this.player = Player.create( this, Object.freeze(Object.assign({},config.player,{
-            // TODO: decouple
-            map: this.map,
-            layerWalls: this.layerWalls,
-        })));
-
-        this.reads = this.add.physicsGroup();
+        this.reads = this.add.physicsGroup(Phaser.Physics.ARCADE,this.mapLayers);
         this.map.createFromTiles(config.tiles.read, -1, 'spritesheet', this.layerReads, this.reads);
         this.reads.children.forEach( tile=>{
-            tile.frame=config.tiles.read; // https://github.com/photonstorm/phaser/issues/2175
+            tile.frame=config.frames.read; // https://github.com/photonstorm/phaser/issues/2175
             tile.body.immovable=true;
             tile.body.offset.set(5,5);
             tile.body.width-=10;
             tile.body.height-=10;
+            // tile.alpha=0.5;
         });
 
-        this.powerup = this.add.sprite(0,0,'powerup');
+        this.powerup = this.add.sprite(0,0,'powerup',undefined,this.mapLayers);
         this.powerup.anchor.set(0.5);
         this.powerup.tint = 0xff0000;
         this.powerup.width = 256;
@@ -120,13 +130,35 @@ Quest.prototype = {
         this.powerup.animations.add('powerup');
         this.powerup.sound = this.add.audio('powerup_sound');
 
+        this.player = Player.create( this, Object.freeze(Object.assign({},config.player,{
+            group: this.mapLayers,
+            // TODO: decouple
+            map: this.map,
+            layerWalls: this.layerWalls,
+        })));
+
         this.cursors = this.input.keyboard.createCursorKeys();
 
         this.score = Score.create(this, config.score);
 
         // q ui
-        this.uiBloch = this.add.image(1280,0,'qbloch');
         this.uiCircuit = this.add.image(1280,480,'qcircuit');
+
+        this.uiBloch = this.add.group();
+        this.uiBlochImageContainer = this.add.group(this.uiBloch);
+
+        this.uiBlochImage = this.add.image(44,44,'qbloch',0,this.uiBlochImageContainer);
+        this.uiBlochImage.crop(new Phaser.Rectangle(107,95,288,285));
+        this.filter = new FilterRemoveWhite(this,{
+            edge0:0.0,
+            edge1:0.95
+        });
+        this.filter.setResolution(config.game.width, config.game.height);
+        this.uiBlochImage.filters = [ this.filter ];
+
+        this.uiBloch_xread_label = this.add.image(54,240,'spritesheet',config.icons.readX,this.uiBloch);
+        this.uiBloch_yread_label = this.add.image(316,198,'spritesheet',config.icons.readY,this.uiBloch);
+        this.uiBloch_zread_label = this.add.image(156,0,'spritesheet',config.icons.readZ,this.uiBloch);
 
         // backgroud music
         this.music = this.add.audio('bgmusic');
@@ -167,7 +199,7 @@ Quest.prototype = {
             console.log('reloadDynamicAssets load completed');
             // TODO: handle load failure
             // update q images 
-            this.uiBloch.loadTexture('qbloch');
+            this.uiBlochImage.loadTexture('qbloch');
             this.uiCircuit.loadTexture('qcircuit');
         });
         this.load.start();

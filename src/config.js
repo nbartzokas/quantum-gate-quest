@@ -11,11 +11,12 @@ export default Object.freeze({
     // phaser-ce game
     // see: https://photonstorm.github.io/phaser-ce/Phaser.Game.html
     game:{
-        width: 2560,
-        height: 1280,
+        width: 1088,
+        height: 1088,
         renderer: Phaser.AUTO,
         antialias: true,
         multiTexture: true,
+        transparent: true,
     },
 
     scale: {
@@ -64,7 +65,7 @@ export default Object.freeze({
 
     score: {
         x:0,
-        y:0, 
+        y:5000, 
         text:'Score: ',
         style: {
             font: '65px Arial',
@@ -75,9 +76,35 @@ export default Object.freeze({
 
     tiles:{
         empty: [-1,0],
-        wall: 4,
-        gate: 75,
-        read: 41,
+        wall: 19,
+        gate: 12,
+        read: 52,
     },
+
+    frames:{
+        wall: 5,
+        gate: 11,
+        read: 51,
+    },
+
+    icons:{
+        readX: 25,
+        readY: 38,
+        readZ: 51,
+    },
+
+    colors:{
+        blue:0x30b0ff,
+        lightgreen:0x20d5d2,
+        pink:0xee538b,
+        green:0x007d79,
+        purple:0x924cfc,
+        black:0x202529,
+        orange:0xd54d20,
+        yellow:0xfcc74c,
+        brightgreen:0xb6fc4c,
+        red:0xd54d20,
+        blochred:0xcf518a,
+    }
 
 });
