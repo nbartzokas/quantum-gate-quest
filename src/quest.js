@@ -7,8 +7,8 @@ import Phaser from 'expose-loader?Phaser!phaser-ce/build/custom/phaser-split.js'
 import merge from 'deepmerge';
 
 import config from './config';
+import Bloch from './bloch';
 import Burst from './burst';
-import FilterRemoveWhite from './filterRemoveWhite';
 import Player from './player';
 import Qubit from './qubit';
 import Score from './score';
@@ -144,21 +144,7 @@ Quest.prototype = {
         // q ui
         this.uiCircuit = this.add.image(1280,480,'qcircuit');
 
-        this.uiBloch = this.add.group();
-        this.uiBlochImageContainer = this.add.group(this.uiBloch);
-
-        this.uiBlochImage = this.add.image(44,44,'qbloch',0,this.uiBlochImageContainer);
-        this.uiBlochImage.crop(new Phaser.Rectangle(107,95,288,285));
-        this.filter = new FilterRemoveWhite(this,{
-            edge0:0.0,
-            edge1:0.95
-        });
-        this.filter.setResolution(config.game.width, config.game.height);
-        this.uiBlochImage.filters = [ this.filter ];
-
-        this.uiBloch_xread_label = this.add.image(54,240,'spritesheet',config.icons.readX,this.uiBloch);
-        this.uiBloch_yread_label = this.add.image(316,198,'spritesheet',config.icons.readY,this.uiBloch);
-        this.uiBloch_zread_label = this.add.image(156,0,'spritesheet',config.icons.readZ,this.uiBloch);
+        this.uiBloch = Bloch.create(this);
 
         // backgroud music
         this.music = this.add.audio('bgmusic');
@@ -199,7 +185,7 @@ Quest.prototype = {
             console.log('reloadDynamicAssets load completed');
             // TODO: handle load failure
             // update q images 
-            this.uiBlochImage.loadTexture('qbloch');
+            this.uiBloch.reloadTexture();
             this.uiCircuit.loadTexture('qcircuit');
         });
         this.load.start();

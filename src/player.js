@@ -18,7 +18,7 @@ export default class Player extends Phaser.Sprite {
         this.nearestTile = new Phaser.Point();
         this.adjacentTiles = [ null, null, null, null, null ];
     }
-    static create(state,options){
+    static create(state,options={}){
         const game = options.game || state.game;
         const group = options.group || state.world;
 

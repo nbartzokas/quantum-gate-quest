@@ -6,7 +6,7 @@ import Phaser from 'expose-loader?Phaser!phaser-ce/build/custom/phaser-split.js'
 
 export default class Burst extends Phaser.Sprite {
 
-    static create(state,options){
+    static create(state,options={}){
         const game = options.game || state.game;
         const group = options.group || state.world;
 
