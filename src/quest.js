@@ -95,6 +95,11 @@ Quest.prototype = {
         this.map.createFromTiles(config.tiles.gateS, -1, 'spritesheet', this.layerGates, this.gates, { frame:config.frames.gateS });
         this.map.createFromTiles(config.tiles.gateT, -1, 'spritesheet', this.layerGates, this.gates, { frame:config.frames.gateT });
         this.map.createFromTiles(config.tiles.gateTdg, -1, 'spritesheet', this.layerGates, this.gates, { frame:config.frames.gateTdg });
+        this.gates.children.forEach( tile=>{
+            tile.body.offset.set(config.tileBuffer,config.tileBuffer);
+            tile.body.width-=config.tileBuffer*2;
+            tile.body.height-=config.tileBuffer*2;
+        });
 
         this.burst = Burst.create(this, config.burst);
 
@@ -104,9 +109,9 @@ Quest.prototype = {
         this.map.createFromTiles(config.tiles.readZ, -1, 'spritesheet', this.layerReads, this.reads, {frame: config.frames.readZ});
         this.reads.children.forEach( tile=>{
             tile.body.immovable=true;
-            tile.body.offset.set(5,5);
-            tile.body.width-=10;
-            tile.body.height-=10;
+            tile.body.offset.set(config.tileBuffer,config.tileBuffer);
+            tile.body.width-=config.tileBuffer*2;
+            tile.body.height-=config.tileBuffer*2;
         });
 
         this.powerup = this.add.sprite(0,0,'powerup');
@@ -189,28 +194,54 @@ Quest.prototype = {
     },
 
     handleOverlapGate: function (sprite,tile) {
-        console.debug('handleOverlapGate',sprite,tile);
-        if (!this.tileOverlap){
+        console.debug('handleOverlapGate',tile.frame);
+        if (this.tileOverlap !== tile){
     
             console.log('applying gate');
 
-            switch (tile.frame){
-                case (config.frames.gate0):
-            }
+            const handler = ()=>{
+                // const x = this.qubit.xRead();
+                // const y = this.qubit.yRead();
+                // const z = this.qubit.zRead();
+                // console.log('done applying gate, read(x,y,z)',x,y,z);
 
-            this.qubit.xGate(()=>{
-                const z = this.qubit.zRead();
-                console.log('done applying gate, readZ',z);
+                // update player color
+                // this.player.tint = (1-x) * 0xffff00 + (1-y) * 0x00ff00 + (1-z) * 0xff0000;
 
-                this.player.tint = (1-z) * 0xff0000 || 0xffffff;
-    
                 // move burst here and play
                 this.burst.position.set( tile.x + tile.width/2, tile.y + tile.height/2 );
                 this.burst.play();
-
+                
+                // reload circuit and qubit
                 this.reloadDynamicAssets();
+            }
 
-            });
+            switch (tile.frame){
+                case config.frames.gate0: {
+                    this.qubit.clear(handler);
+                    break;
+                }
+                case config.frames.gateX: {
+                    this.qubit.gate('XGate',handler);
+                    break;
+                }
+                case config.frames.gateH: {
+                    this.qubit.gate('HGate',handler);
+                    break;
+                }
+                case config.frames.gateS: {
+                    this.qubit.gate('SGate',handler);
+                    break;
+                }
+                case config.frames.gateT: {
+                    this.qubit.gate('TGate',handler);
+                    break;
+                }
+                case config.frames.gateTdg: {
+                    this.qubit.gate('TdgGate',handler);
+                    break;
+                }
+            }
 
             this.tileOverlap = tile;
         }
@@ -218,8 +249,8 @@ Quest.prototype = {
 
     // TODO: these handlers smell like a component behavior for a tile overlap system
     handleOverlapRead: function (sprite,tile) {
-        console.debug('handleOverlapGate',tile.frame,sprite,tile);
-        if (!this.tileOverlap){
+        console.debug('handleOverlapGate',tile.frame);
+        if (this.tileOverlap!==tile){
 
             const z = this.qubit.zRead();
             
@@ -241,8 +272,23 @@ Quest.prototype = {
         }
     },
     handleCollideRead: function (sprite,tile){
-        console.log('handleCollideRead',sprite,tile);
-        return this.qubit.zRead()===1;
+        console.log('handleCollideRead',tile.frame);
+        let collide = false;
+        switch (tile.frame){
+            case config.frames.readX: {
+                collide = this.qubit.xRead() !== 0;
+                break;
+            }
+            case config.frames.readY: {
+                collide = this.qubit.yRead() !== 0;
+                break;
+            }
+            case config.frames.readZ: {
+                collide = this.qubit.zRead() !== 0;
+                break;
+            }
+        }
+        return collide;
     },
 
     update: function () {

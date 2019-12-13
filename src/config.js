@@ -26,6 +26,7 @@ export default Object.freeze({
     },
 
     gridsize: GRID_SIZE,
+    tileBuffer: 10,
 
     player:{
         sprite:{

@@ -16,6 +16,7 @@ export default class Circuit extends Phaser.Group {
 
         const circuit = group.add(new Circuit(game));
         circuit.circuitDiagram = game.add.image(0,0,'qcircuit',0,circuit);
+        circuit.circuitDiagram.width = circuit.circuitDiagram.width > 700 ? 700 : circuit.circuitDiagram.width;
         // circuit.circuitDiagram.crop(new Phaser.Rectangle(96,0,1000,1000));
 
         return circuit;
@@ -23,5 +24,6 @@ export default class Circuit extends Phaser.Group {
 
     reloadTexture(){
         this.circuitDiagram.loadTexture('qcircuit');
+        this.circuitDiagram.width = this.circuitDiagram.width > 700 ? 700 : this.circuitDiagram.width;
     }
 }

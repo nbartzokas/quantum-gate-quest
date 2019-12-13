@@ -35,10 +35,9 @@ def measureX():
 
 def measureY():
   # apply h, measure, then remove both
-  circuit.h(0)
   circuit.sdg(0)
-  counts = measureZ()
-  del circuit.data[-2:]
+  counts = measureX()
+  circuit.data.pop()
   return counts
 
 @app.route("/")
@@ -56,14 +55,16 @@ def query(instruction):
   # get instruction class
   inst_class = getattr( qiskit.extensions.standard, instruction )
 
-  # apply gate, unless
-  if ( len(circuit.data) > 0 and isinstance( circuit.data[-1][0], inst_class ) ):
-    # if last gate is same as this gate, remove last gate
-    circuit.data.pop()
-  else:
-    # apply gate
-    # circuit.x(0)
-    circuit.append(inst_class(),circuit.qubits)
+  # # apply gate, unless
+  # if ( len(circuit.data) > 0 and isinstance( circuit.data[-1][0], inst_class ) ):
+  #   # if last gate is same as this gate, remove last gate
+  #   circuit.data.pop()
+  # else:
+  #   # apply gate
+  #   # circuit.x(0)
+  #   circuit.append(inst_class(),circuit.qubits)
+    
+  circuit.append(inst_class(),circuit.qubits)
 
   cx=measureX()
   cy=measureY()
@@ -76,9 +77,11 @@ def query(instruction):
   z0=cz['0'] if '0' in cz else 0
   z1=cz['1'] if '1' in cz else 0
   
-  x=(x0*0+x1*1)/nshots
-  y=(y0*0+y1*1)/nshots
-  z=(z0*0+z1*1)/nshots
+  x=round((x0*0+x1*1)/nshots,1)
+  y=round((y0*0+y1*1)/nshots,1)
+  z=round((z0*0+z1*1)/nshots,1)
+
+  print(f'{x},{y},{z}')
 
   return json.dumps({'x':x,'y':y,'z':z})
 

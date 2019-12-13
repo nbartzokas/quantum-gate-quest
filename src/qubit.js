@@ -17,24 +17,23 @@ export default class Qubit {
     }
 
     /**
-     * Take a Z measurement
+     * Take a X/Y/Z measurement
      * Because game needs this function to be synchronous,
-     * z measurements are pre-computed during gate applications.
-     * Read functions return a random measurement from the 
-     * precomputed set.
+     * X/Y/Z measurements are pre-computed during gate applications.
      * @returns {number} measurement
      */
-    zRead(){
-        return this.z;
-    }
+    xRead(){ return this.x; }
+    yRead(){ return this.y; }
+    zRead(){ return this.z; }
     
     /**
-     * Apply an X-Gate to the qubit
+     * Apply a gate to the qubit
+     * @param {string} type type of gate to apply see https://qiskit.org/documentation/apidoc/extensions/standard.html
      * @param {function} cb 
-     * @returns {object} JSON response
+     * @returns {object} JSON response in the form {x:#,y:#,z:#}
      */
-    xGate(cb){
-        return fetch('/q/XGate')
+    gate(type,cb){
+        return fetch('/q/'+type)
             .then(response => response.json())
             .then(json => Object.assign(this,json))
             .then(cb);
