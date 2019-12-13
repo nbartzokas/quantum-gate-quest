@@ -8,10 +8,11 @@ import config from './config';
 import Bloch from './bloch';
 import Burst from './burst';
 import Circuit from './circuit';
+import Help from './help';
 import Menu from './menu';
 import Player from './player';
 import Qubit from './qubit';
-import Score from './score';
+import Win from './win';
 
 var Quest = function () {
 
@@ -25,6 +26,7 @@ var Quest = function () {
     this.uiCircuit = null;
     this.uiBloch = null;
     this.music = null;
+    this.info=null;
 
     this.tileOverlap = null; // holds any special tile the player is currently overlapping
 
@@ -53,6 +55,17 @@ Quest.prototype = {
 
         this.load.image('bg','assets/images/bg.png?nocache='+Date.now(),true);
         
+        this.load.image('info-1','assets/images/info-1.png?nocache='+Date.now(),true);
+        this.load.image('info-2','assets/images/info-2.png?nocache='+Date.now(),true);
+        this.load.image('info-3','assets/images/info-3.png?nocache='+Date.now(),true);
+        this.load.image('info-4','assets/images/info-4.png?nocache='+Date.now(),true);
+        this.load.image('info-5','assets/images/info-5.png?nocache='+Date.now(),true);
+        this.load.image('info-6','assets/images/info-6.png?nocache='+Date.now(),true);
+        this.load.image('info-7','assets/images/info-7.png?nocache='+Date.now(),true);
+        this.load.image('info-8','assets/images/info-8.png?nocache='+Date.now(),true);
+        this.load.image('info-9','assets/images/info-9.png?nocache='+Date.now(),true);
+        this.load.image('win','assets/images/win.png?nocache='+Date.now(),true);
+        
         this.load.spritesheet('burst', 'assets/sprites/burst.png', 100, 100);
         this.load.audio('burst_sound','assets/sounds/446145__justinvoke__freeze-hit.wav');
 
@@ -69,6 +82,9 @@ Quest.prototype = {
 
         // background music
         this.load.audio('bgmusic', ['assets/sounds/Juhani Junkala [Chiptune Adventures] 1. Stage 1.ogg']);
+
+        // win sound
+        this.load.audio('winsound', ['assets/sounds/hero_win.ogg']);
 
         // ui icons
         this.load.spritesheet('icons','assets/sprites/icons.png?nocache='+Date.now(),50,50);
@@ -101,8 +117,6 @@ Quest.prototype = {
             tile.body.height-=config.tileBuffer*2;
         });
 
-        this.burst = Burst.create(this, config.burst);
-
         this.reads = this.add.physicsGroup();
         this.map.createFromTiles(config.tiles.readX, -1, 'spritesheet', this.layerReads, this.reads, {frame: config.frames.readX});
         this.map.createFromTiles(config.tiles.readY, -1, 'spritesheet', this.layerReads, this.reads, {frame: config.frames.readY});
@@ -130,7 +144,6 @@ Quest.prototype = {
 
         this.cursors = this.input.keyboard.createCursorKeys();
 
-        this.score = Score.create(this, config.score);
 
         // q ui
         this.uiCircuit = Circuit.create(this);
@@ -148,6 +161,19 @@ Quest.prototype = {
 
         this.add.image(0,0,'bg');
 
+        this.info = Help.create(this,config.help);
+
+        this.win = Win.create(this);
+
+    },
+
+    restart(){
+        this.qubit.clear();
+        this.player.reset();
+    },
+
+    help(){
+        this.info.start();
     },
 
     reloadDynamicAssets: function(){
@@ -200,17 +226,11 @@ Quest.prototype = {
             console.log('applying gate');
 
             const handler = ()=>{
-                // const x = this.qubit.xRead();
-                // const y = this.qubit.yRead();
-                // const z = this.qubit.zRead();
-                // console.log('done applying gate, read(x,y,z)',x,y,z);
 
-                // update player color
-                // this.player.tint = (1-x) * 0xffff00 + (1-y) * 0x00ff00 + (1-z) * 0xff0000;
-
-                // move burst here and play
-                this.burst.position.set( tile.x + tile.width/2, tile.y + tile.height/2 );
-                this.burst.play();
+                // burst here
+                const burst = Burst.create(this, config.burst);
+                burst.position.set( tile.x + tile.width/2, tile.y + tile.height/2 );
+                burst.playAndKill();
                 
                 // reload circuit and qubit
                 this.reloadDynamicAssets();
@@ -252,20 +272,35 @@ Quest.prototype = {
         console.debug('handleOverlapGate',tile.frame);
         if (this.tileOverlap!==tile){
 
-            const z = this.qubit.zRead();
-            
-            console.log('readZ',z);
-            if (z===0){
+            const handler = ()=>{
                 // move powerup here and play
                 this.powerup.x = tile.x + tile.width/2;
                 this.powerup.y = tile.y + tile.height/2;
                 this.powerup.play('powerup');
                 this.powerup.sound.play();
-                this.score.value += 1;
-                this.score.update();
-            }else{
-                this.score.value -= 1;
-                this.score.update();
+            };
+
+            switch (tile.frame){
+                case config.frames.readX: {
+                    if (this.qubit.readX()===0){
+                        handler();
+                    }
+                    break;
+                }
+                case config.frames.readY: {
+                    if (this.qubit.readY()===0){
+                        handler();
+                        this.restart();
+                        this.win.show();
+                    }
+                    break;
+                }
+                case config.frames.readZ: {
+                    if (this.qubit.readZ()===0){
+                        handler();
+                    }
+                    break;
+                }
             }
 
             this.tileOverlap = tile;
@@ -276,15 +311,15 @@ Quest.prototype = {
         let collide = false;
         switch (tile.frame){
             case config.frames.readX: {
-                collide = this.qubit.xRead() !== 0;
+                collide = this.qubit.readX() !== 0;
                 break;
             }
             case config.frames.readY: {
-                collide = this.qubit.yRead() !== 0;
+                collide = this.qubit.readY() !== 0;
                 break;
             }
             case config.frames.readZ: {
-                collide = this.qubit.zRead() !== 0;
+                collide = this.qubit.readZ() !== 0;
                 break;
             }
         }

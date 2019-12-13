@@ -133,4 +133,18 @@ export default Object.freeze({
         }
     },
 
+    help:{
+        images:[
+            'info-1',
+            'info-2',
+            'info-3',
+            'info-4',
+            'info-5',
+            'info-6',
+            'info-7',
+            'info-8',
+            'info-9',
+        ]
+    }
+
 });

@@ -22,9 +22,9 @@ export default class Qubit {
      * X/Y/Z measurements are pre-computed during gate applications.
      * @returns {number} measurement
      */
-    xRead(){ return this.x; }
-    yRead(){ return this.y; }
-    zRead(){ return this.z; }
+    readX(){ return this.x; }
+    readY(){ return this.y; }
+    readZ(){ return this.z; }
     
     /**
      * Apply a gate to the qubit

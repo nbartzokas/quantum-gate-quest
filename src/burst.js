@@ -38,4 +38,9 @@ export default class Burst extends Phaser.Sprite {
         this.sound.play();
     }
 
+    playAndKill(){
+        super.play('burst',null,false,true);
+        this.sound.play();
+    }
+
 }

@@ -17,6 +17,7 @@ export default class Player extends Phaser.Sprite {
         this.turnThreshold = config.player.turnThreshold; // fuzziness threshold for testing when player aligns with turnpoint
         this.nearestTile = new Phaser.Point();
         this.adjacentTiles = [ null, null, null, null, null ];
+        this.options = null;
     }
     static create(state,options={}){
         const game = options.game || state.game;
@@ -25,6 +26,7 @@ export default class Player extends Phaser.Sprite {
         // sprite
         const player = group.add(new Player(game, options.sprite.x, options.sprite.y, options.sprite.key, options.sprite.frame));
         player.anchor.set(options.sprite.anchor);
+        player.options=options;
 
         // animations
         if (options.animations && options.animations.constructor === Array){
@@ -47,6 +49,10 @@ export default class Player extends Phaser.Sprite {
 
         return player;
 
+    }
+
+    reset(){
+        this.position.set(this.options.sprite.x,this.options.sprite.y);
     }
 
     control(activeDirections){

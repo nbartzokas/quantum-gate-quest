@@ -47,13 +47,13 @@ export default class Menu extends Phaser.Group {
         const sz = 50;
 
         menu.restartBtn = game.add.button(x, y, 'icons', ()=>{
-            console.log('restart');
+            state.restart();
         }, menu, menu.iconRestart, menu.iconRestart, menu.iconRestart, menu.iconRestart, menu)
 
         x+=sz;
 
         menu.helpBtn = game.add.button(x, y, 'icons', ()=>{
-            console.log('help');
+            state.help();
         }, menu, menu.iconHelp, menu.iconHelp, menu.iconHelp, menu.iconHelp, menu)
 
         x+=sz;
