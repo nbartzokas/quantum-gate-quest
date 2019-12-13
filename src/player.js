@@ -57,7 +57,7 @@ export default class Player extends Phaser.Sprite {
         // no active directions, stop
         if (activeDirections.length===0){
             if (this.currentDirection!==Phaser.NONE){
-                console.debug('update: no active direction so stopping');
+                // console.debug('update: no active direction so stopping');
                 this.stop();
             }
         }
@@ -68,11 +68,11 @@ export default class Player extends Phaser.Sprite {
 
             // if direction is new
             if (this.currentDirection!==direction){
-                console.debug('update: one active direction',util.dirToString(direction));
+                // console.debug('update: one active direction',util.dirToString(direction));
 
                 // if direction is not blocked, align with walls in that direction
                 if (this.checkDirection(direction)){
-                    console.debug('update: active direction is not blocked, aligning');
+                    // console.debug('update: active direction is not blocked, aligning');
                     this.turn(direction);
                 }
 
@@ -88,11 +88,11 @@ export default class Player extends Phaser.Sprite {
             
             // if not already moving in turning direction
             if (this.currentDirection!==turning){
-                console.debug('update: two+ active directions, turning:',util.dirToString(turning),', direction:',util.dirToString(direction));
+                // console.debug('update: two+ active directions, turning:',util.dirToString(turning),', direction:',util.dirToString(direction));
 
                 // if player is ready to turn
                 if (this.checkDirection(turning)){
-                    console.debug('update: active turning direction is not blocked, aligning');
+                    // console.debug('update: active turning direction is not blocked, aligning');
 
                     // turn
                     this.turn(turning);
@@ -104,7 +104,7 @@ export default class Player extends Phaser.Sprite {
                 
                 // if player isn't ready to turn, and isn't already traveling, move
                 else if (this.currentDirection!==direction){
-                    console.debug('update: active turning direction is blocked, moving in secondary direction');
+                    // console.debug('update: active turning direction is blocked, moving in secondary direction');
 
                     this.move(direction);
                 }
@@ -113,7 +113,7 @@ export default class Player extends Phaser.Sprite {
     }
 
     move(direction) {
-        console.debug('[player] move', util.dirToString(direction) );
+        // console.debug('[player] move', util.dirToString(direction) );
 
         var speed = this.speed;
 
@@ -147,27 +147,27 @@ export default class Player extends Phaser.Sprite {
     }
 
     stop() {
-        console.debug('[player] stop');
+        // console.debug('[player] stop');
         this.body.velocity.set(0);
         this.currentDirection=Phaser.NONE;
         this.animations.stop(null,true);
     }
 
     turn(turnTo) {
-        console.debug('[player] attempting turn', util.dirToString(turnTo));
+        // console.debug('[player] attempting turn', util.dirToString(turnTo));
 
         this.setTurnPoint();
 
         var cx = Math.floor(this.x);
         var cy = Math.floor(this.y);
 
-        console.debug(cx, this.turnPoint.x, this.turnThreshold, cy, this.turnPoint.y, this.turnThreshold);
+        // console.debug(cx, this.turnPoint.x, this.turnThreshold, cy, this.turnPoint.y, this.turnThreshold);
         if (!this.game.math.fuzzyEqual(cx, this.turnPoint.x, this.turnThreshold) || 
             !this.game.math.fuzzyEqual(cy, this.turnPoint.y, this.turnThreshold) ){
             return false;
         }
 
-        console.debug('[player] turning to', util.dirToString(turnTo));
+        // console.debug('[player] turning to', util.dirToString(turnTo));
 
         //  Grid align before turning
         if (turnTo===Phaser.LEFT||turnTo===Phaser.RIGHT){
@@ -186,7 +186,7 @@ export default class Player extends Phaser.Sprite {
     setTurnPoint(){
         this.turnPoint.x = (this.nearestTile.x * config.gridsize) + (config.gridsize / 2);
         this.turnPoint.y = (this.nearestTile.y * config.gridsize) + (config.gridsize / 2);
-        console.debug('[player] setTurnPoint',this.turnPoint,this.nearestTile)
+        // console.debug('[player] setTurnPoint',this.turnPoint,this.nearestTile)
     }
 
     setNearestTile(){
@@ -204,22 +204,22 @@ export default class Player extends Phaser.Sprite {
     checkDirection(turnTo) {
 
         if (this.adjacentTiles[turnTo] === null){
-            console.debug('[player] checkDirection: no valid tile that way', util.dirToString(turnTo), this.adjacentTiles[turnTo] );
+            // console.debug('[player] checkDirection: no valid tile that way', util.dirToString(turnTo), this.adjacentTiles[turnTo] );
             return false;
         }
 
         else if ( config.tiles.empty.indexOf(this.adjacentTiles[turnTo].index) === -1 ){
-            console.debug('[player] checkDirection: no floor tile that way', util.dirToString(turnTo), this.adjacentTiles[turnTo] );
+            // console.debug('[player] checkDirection: no floor tile that way', util.dirToString(turnTo), this.adjacentTiles[turnTo] );
             return false;
         }
 
         else if (this.currentDirection === util.tileOpposite(turnTo)){
-            console.debug('[player] checkDirection: permitting turn around', util.dirToString(turnTo), this.adjacentTiles[turnTo] );
+            // console.debug('[player] checkDirection: permitting turn around', util.dirToString(turnTo), this.adjacentTiles[turnTo] );
             return true;
         }
 
         else{
-            console.debug('[player] checkDirection: permitting turn', util.dirToString(turnTo), this.adjacentTiles[turnTo] );
+            // console.debug('[player] checkDirection: permitting turn', util.dirToString(turnTo), this.adjacentTiles[turnTo] );
             return true;
         }
 

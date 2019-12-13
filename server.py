@@ -7,6 +7,7 @@ from io import BytesIO
 import numpy as np
 from qiskit import *
 
+nshots = 1024
 circuit = QuantumCircuit(1,1)
 backend_qasm = Aer.get_backend('qasm_simulator')
 backend_statevector = BasicAer.get_backend('statevector_simulator')
@@ -16,6 +17,29 @@ def send_figure(image,format='png'):
   image.savefig(imageIO, format=format)
   imageIO.seek(0)
   return send_file(imageIO, mimetype='image/{}'.format(format))
+
+def measureZ():
+  # measure, then remove measurement
+  circuit.measure([0],[0])
+  result = execute(circuit, backend = backend_qasm, shots = nshots).result()
+  counts = result.get_counts(circuit)
+  circuit.data.pop()
+  return counts
+
+def measureX():
+  # apply h, measure, then remove both
+  circuit.h(0)
+  counts = measureZ()
+  circuit.data.pop()
+  return counts
+
+def measureY():
+  # apply h, measure, then remove both
+  circuit.h(0)
+  circuit.sdg(0)
+  counts = measureZ()
+  del circuit.data[-2:]
+  return counts
 
 @app.route("/")
 def index():
@@ -41,13 +65,22 @@ def query(instruction):
     # circuit.x(0)
     circuit.append(inst_class(),circuit.qubits)
 
-  # measure, then remove measurement
-  circuit.measure([0],[0])
-  result = execute(circuit, backend = backend_qasm, shots = 1024).result()
-  counts = result.get_counts(circuit)
-  circuit.data.pop()
+  cx=measureX()
+  cy=measureY()
+  cz=measureZ()
 
-  return json.dumps(counts)
+  x0=cx['0'] if '0' in cx else 0
+  x1=cx['1'] if '1' in cx else 0
+  y0=cy['0'] if '0' in cy else 0
+  y1=cy['1'] if '1' in cy else 0
+  z0=cz['0'] if '0' in cz else 0
+  z1=cz['1'] if '1' in cz else 0
+  
+  x=(x0*0+x1*1)/nshots
+  y=(y0*0+y1*1)/nshots
+  z=(z0*0+z1*1)/nshots
+
+  return json.dumps({'x':x,'y':y,'z':z})
 
 @app.route('/draw')
 @app.route('/draw.<format>')

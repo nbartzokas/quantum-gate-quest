@@ -77,17 +77,29 @@ export default Object.freeze({
     tiles:{
         empty: [-1,0],
         wall: 19,
-        gate: 12,
-        read: 52,
+
+        gate0: 13,
+        gateX: 12,
+        gateH: 51,
+        gateS: 64,
+        gateT: 65,
+        gateTdg: 78,
+
+        readX: 26,
+        readY: 39,
+        readZ: 52,
     },
 
     frames:{
-        wall: 5,
-        gate: 11,
-        read: 51,
-    },
 
-    icons:{
+        // tile id - 1
+        gate0: 12,
+        gateX: 11,
+        gateH: 50,
+        gateS: 63,
+        gateT: 64,
+        gateTdg: 77,
+
         readX: 25,
         readY: 38,
         readZ: 51,

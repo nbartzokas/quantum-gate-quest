@@ -29,9 +29,9 @@ export default class Bloch extends Phaser.Group {
         bloch.blochDiagram = game.add.image(44,44,'qbloch',0,bloch.blochDiagramContainer);
         bloch.blochDiagram.crop(new Phaser.Rectangle(107,95,288,285));
     
-        bloch.labels.xread = game.add.image(54,240,'spritesheet',config.icons.readX, bloch);
-        bloch.labels.yread = game.add.image(316,198,'spritesheet',config.icons.readY, bloch);
-        bloch.labels.zread = game.add.image(156,0,'spritesheet',config.icons.readZ, bloch);
+        bloch.labels.xread = game.add.image(54,240,'spritesheet',config.frames.readX, bloch);
+        bloch.labels.yread = game.add.image(316,198,'spritesheet',config.frames.readY, bloch);
+        bloch.labels.zread = game.add.image(156,0,'spritesheet',config.frames.readZ, bloch);
 
         return bloch;
     }

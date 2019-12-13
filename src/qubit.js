@@ -1,11 +1,19 @@
-import util from './util';
-
 export default class Qubit {
 
     constructor(){
         this.x = 0;
         this.y = 0;
         this.z = 0;
+    }
+
+    /**
+     * Clear qubit circuit
+     * @param {function} cb 
+     * @returns {object} JSON response
+     */
+    clear(cb){
+        return fetch('/q/clear')
+            .then(cb);
     }
 
     /**
@@ -28,7 +36,7 @@ export default class Qubit {
     xGate(cb){
         return fetch('/q/XGate')
             .then(response => response.json())
-            .then(json => this.z=util.jobCountWinner(json)) // TODO: assumes Z measurement
+            .then(json => Object.assign(this,json))
             .then(cb);
     }
 }

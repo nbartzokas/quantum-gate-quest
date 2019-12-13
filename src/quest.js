@@ -37,6 +37,7 @@ Quest.prototype = {
     init: function () {
 
         this.qubit = new Qubit();
+        this.qubit.clear(); // TODO: use callback
 
         Object.assign(this.scale,config.scale);
 
@@ -88,23 +89,24 @@ Quest.prototype = {
         this.layerReads = this.map.createLayer('reads');
 
         this.gates = this.add.physicsGroup();
-        this.map.createFromTiles(config.tiles.gate, -1, 'spritesheet', this.layerGates, this.gates);
-        this.gates.children.forEach( tile=>{
-            tile.frame=config.frames.gate; // https://github.com/photonstorm/phaser/issues/2175
-            // tile.alpha=0.5;
-        });
+        this.map.createFromTiles(config.tiles.gate0, -1, 'spritesheet', this.layerGates, this.gates, { frame:config.frames.gate0 });
+        this.map.createFromTiles(config.tiles.gateX, -1, 'spritesheet', this.layerGates, this.gates, { frame:config.frames.gateX });
+        this.map.createFromTiles(config.tiles.gateH, -1, 'spritesheet', this.layerGates, this.gates, { frame:config.frames.gateH });
+        this.map.createFromTiles(config.tiles.gateS, -1, 'spritesheet', this.layerGates, this.gates, { frame:config.frames.gateS });
+        this.map.createFromTiles(config.tiles.gateT, -1, 'spritesheet', this.layerGates, this.gates, { frame:config.frames.gateT });
+        this.map.createFromTiles(config.tiles.gateTdg, -1, 'spritesheet', this.layerGates, this.gates, { frame:config.frames.gateTdg });
 
         this.burst = Burst.create(this, config.burst);
 
         this.reads = this.add.physicsGroup();
-        this.map.createFromTiles(config.tiles.read, -1, 'spritesheet', this.layerReads, this.reads);
+        this.map.createFromTiles(config.tiles.readX, -1, 'spritesheet', this.layerReads, this.reads, {frame: config.frames.readX});
+        this.map.createFromTiles(config.tiles.readY, -1, 'spritesheet', this.layerReads, this.reads, {frame: config.frames.readY});
+        this.map.createFromTiles(config.tiles.readZ, -1, 'spritesheet', this.layerReads, this.reads, {frame: config.frames.readZ});
         this.reads.children.forEach( tile=>{
-            tile.frame=config.frames.read; // https://github.com/photonstorm/phaser/issues/2175
             tile.body.immovable=true;
             tile.body.offset.set(5,5);
             tile.body.width-=10;
             tile.body.height-=10;
-            // tile.alpha=0.5;
         });
 
         this.powerup = this.add.sprite(0,0,'powerup');
@@ -144,12 +146,12 @@ Quest.prototype = {
     },
 
     reloadDynamicAssets: function(){
-        console.log('reloadDynamicAssets called');
         this.load.image('qcircuit', 'draw?nocache='+Date.now(),true);
         this.load.image('qbloch', 'bloch?nocache='+Date.now(),true);
         this.load.onLoadComplete.addOnce(()=>{
-            console.log('reloadDynamicAssets load completed');
             // TODO: handle load failure
+            // TODO: smooth transition to new image
+            // TODO: add animation to draw attention to the change?
             // update q images 
             this.uiBloch.reloadTexture();
             this.uiCircuit.reloadTexture();
@@ -169,12 +171,12 @@ Quest.prototype = {
             // if the key is down and not detected and stored yet, store it
             if (key.isDown && index===-1){
                 this.inputActiveDirections.splice(0,0,direction);
-                console.debug('this.inputActiveDirections',this.inputActiveDirections);
+                // console.debug('this.inputActiveDirections',this.inputActiveDirections);
             }
             // if the key is stored no longer down, remove it
             else if (!key.isDown && index!==-1){
                 this.inputActiveDirections.splice(index,1);
-                console.debug('this.inputActiveDirections',this.inputActiveDirections);
+                // console.debug('this.inputActiveDirections',this.inputActiveDirections);
             }
         }
         return this.inputActiveDirections;
@@ -190,15 +192,17 @@ Quest.prototype = {
         console.debug('handleOverlapGate',sprite,tile);
         if (!this.tileOverlap){
     
-            console.log('applying xGate');
+            console.log('applying gate');
+
+            switch (tile.frame){
+                case (config.frames.gate0):
+            }
 
             this.qubit.xGate(()=>{
-
                 const z = this.qubit.zRead();
+                console.log('done applying gate, readZ',z);
 
-                console.log('done applying xGate, readZ',z);
-    
-                this.player.tint = z * 0xff0000 || 0xffffff;
+                this.player.tint = (1-z) * 0xff0000 || 0xffffff;
     
                 // move burst here and play
                 this.burst.position.set( tile.x + tile.width/2, tile.y + tile.height/2 );
@@ -214,13 +218,13 @@ Quest.prototype = {
 
     // TODO: these handlers smell like a component behavior for a tile overlap system
     handleOverlapRead: function (sprite,tile) {
+        console.debug('handleOverlapGate',tile.frame,sprite,tile);
         if (!this.tileOverlap){
 
             const z = this.qubit.zRead();
             
             console.log('readZ',z);
-            if (z===1){
-                console.log('WIN POINT');
+            if (z===0){
                 // move powerup here and play
                 this.powerup.x = tile.x + tile.width/2;
                 this.powerup.y = tile.y + tile.height/2;
@@ -229,7 +233,6 @@ Quest.prototype = {
                 this.score.value += 1;
                 this.score.update();
             }else{
-                console.log('LOSE POINT');
                 this.score.value -= 1;
                 this.score.update();
             }
@@ -239,7 +242,7 @@ Quest.prototype = {
     },
     handleCollideRead: function (sprite,tile){
         console.log('handleCollideRead',sprite,tile);
-        return this.qubit.zRead()===0;
+        return this.qubit.zRead()===1;
     },
 
     update: function () {
