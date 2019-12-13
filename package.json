@@ -27,7 +27,6 @@
     "webpack-dev-server": "^3.9.0"
   },
   "dependencies": {
-    "deepmerge": "^4.2.2",
     "phaser-ce": "^2.13.3"
   }
 }

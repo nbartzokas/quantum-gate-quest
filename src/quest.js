@@ -4,11 +4,11 @@ import PIXI from 'expose-loader?PIXI!phaser-ce/build/custom/pixi.js';
 import p2 from 'expose-loader?p2!phaser-ce/build/custom/p2.js';
 import Phaser from 'expose-loader?Phaser!phaser-ce/build/custom/phaser-split.js';
 
-import merge from 'deepmerge';
-
 import config from './config';
 import Bloch from './bloch';
 import Burst from './burst';
+import Circuit from './circuit';
+import Menu from './menu';
 import Player from './player';
 import Qubit from './qubit';
 import Score from './score';
@@ -49,6 +49,8 @@ Quest.prototype = {
     },
 
     preload: function () {
+
+        this.load.image('bg','assets/images/bg.png?nocache='+Date.now(),true);
         
         this.load.spritesheet('burst', 'assets/sprites/burst.png', 100, 100);
         this.load.audio('burst_sound','assets/sounds/446145__justinvoke__freeze-hit.wav');
@@ -68,7 +70,7 @@ Quest.prototype = {
         this.load.audio('bgmusic', ['assets/sounds/Juhani Junkala [Chiptune Adventures] 1. Stage 1.ogg']);
 
         // ui icons
-        this.load.spritesheet('icons','assets/sprites/icons.png',50,50);
+        this.load.spritesheet('icons','assets/sprites/icons.png?nocache='+Date.now(),50,50);
 
     },
 
@@ -77,41 +79,24 @@ Quest.prototype = {
         this.map = this.add.tilemap('map');
         this.map.addTilesetImage('tileset', 'tiles');
 
-        const mapW = this.map.widthInPixels;
-        const mapH = this.map.heightInPixels;
+        this.layerFloor = this.map.createLayer('floor');
 
-        this.mapLayers = this.add.group();
-        // this.mapLayers.x = 0;
-        // this.mapLayers.y = 288;
-
-        this.layerFloor = this.map.createLayer('floor',mapW,mapH,this.mapLayers);
-
-        this.layerWalls = this.map.createLayer('walls',mapW,mapH,this.mapLayers);
+        this.layerWalls = this.map.createLayer('walls');
         this.map.setCollisionByExclusion(config.tiles.empty,true/*collides*/,this.layerWalls);
 
-        this.layerGates = this.map.createLayer('gates',mapW,mapH,this.mapLayers);
-        this.layerReads = this.map.createLayer('reads',mapW,mapH,this.mapLayers);
+        this.layerGates = this.map.createLayer('gates');
+        this.layerReads = this.map.createLayer('reads');
 
-        this.gates = this.add.physicsGroup(Phaser.Physics.ARCADE,this.mapLayers);
+        this.gates = this.add.physicsGroup();
         this.map.createFromTiles(config.tiles.gate, -1, 'spritesheet', this.layerGates, this.gates);
         this.gates.children.forEach( tile=>{
             tile.frame=config.frames.gate; // https://github.com/photonstorm/phaser/issues/2175
             // tile.alpha=0.5;
         });
 
-        this.burst = Burst.create(this, Object.assign(
-            {},
-            {
-                group: this.mapLayers,
-            },
-            merge(config.burst,{
-                sprite:{
-                    tint: 0x00ff00,
-                }
-            })
-        ));
+        this.burst = Burst.create(this, config.burst);
 
-        this.reads = this.add.physicsGroup(Phaser.Physics.ARCADE,this.mapLayers);
+        this.reads = this.add.physicsGroup();
         this.map.createFromTiles(config.tiles.read, -1, 'spritesheet', this.layerReads, this.reads);
         this.reads.children.forEach( tile=>{
             tile.frame=config.frames.read; // https://github.com/photonstorm/phaser/issues/2175
@@ -122,7 +107,7 @@ Quest.prototype = {
             // tile.alpha=0.5;
         });
 
-        this.powerup = this.add.sprite(0,0,'powerup',undefined,this.mapLayers);
+        this.powerup = this.add.sprite(0,0,'powerup');
         this.powerup.anchor.set(0.5);
         this.powerup.tint = 0xff0000;
         this.powerup.width = 256;
@@ -131,8 +116,7 @@ Quest.prototype = {
         this.powerup.sound = this.add.audio('powerup_sound');
 
         this.player = Player.create( this, Object.freeze(Object.assign({},config.player,{
-            group: this.mapLayers,
-            // TODO: decouple
+            // TODO: decouple, perhaps with event system
             map: this.map,
             layerWalls: this.layerWalls,
         })));
@@ -142,38 +126,20 @@ Quest.prototype = {
         this.score = Score.create(this, config.score);
 
         // q ui
-        this.uiCircuit = this.add.image(1280,480,'qcircuit');
+        this.uiCircuit = Circuit.create(this);
+        this.uiCircuit.position.set(0,300);
 
         this.uiBloch = Bloch.create(this);
+        this.uiBloch.position.set(676,136);
 
         // backgroud music
         this.music = this.add.audio('bgmusic');
         this.music.loop=true;
         this.music.play();
 
-        // audio controls
-        const iconMute = 140;
-        const iconUnmute = 120;
-        this.sound.mute = false;
-        try {
-            this.sound.mute = JSON.parse(localStorage.getItem('qgq:mute'));
-        }catch(e){
-            console.debug('qgq mute setting note found');
-        }
-        this.muteBtn = this.add.button(this.world.centerX - 95, 400, 'icons', ()=>{
-            this.sound.mute = !this.sound.mute;
-            localStorage.setItem('qgq:mute', this.sound.mute);
-            if (this.sound.mute){
-                this.muteBtn.setFrames(iconMute,iconMute,iconUnmute,iconMute);
-            }else{
-                this.muteBtn.setFrames(iconUnmute,iconUnmute,iconMute,iconUnmute);
-            }
-        }, this, iconMute, iconUnmute, iconMute);
-        if (this.sound.mute){
-            this.muteBtn.setFrames(iconMute,iconMute,iconUnmute,iconMute);
-        }else{
-            this.muteBtn.setFrames(iconUnmute,iconUnmute,iconMute,iconUnmute);
-        }
+        this.menu = Menu.create(this,config.menu);
+
+        this.add.image(0,0,'bg');
 
     },
 
@@ -186,7 +152,7 @@ Quest.prototype = {
             // TODO: handle load failure
             // update q images 
             this.uiBloch.reloadTexture();
-            this.uiCircuit.loadTexture('qcircuit');
+            this.uiCircuit.reloadTexture();
         });
         this.load.start();
     },

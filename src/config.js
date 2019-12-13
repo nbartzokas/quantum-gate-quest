@@ -34,7 +34,7 @@ export default Object.freeze({
             anchor: 0.5,
             // starting point
             x: 1.5 * GRID_SIZE, 
-            y: 7.5 * GRID_SIZE,
+            y: 15.5 * GRID_SIZE,
         },
         animations:[
             { name: 'walk-left',  frames: [94,95,94,96], frameRate: 10, loop: true },
@@ -55,7 +55,7 @@ export default Object.freeze({
             y: 0,
             width: 256,
             height: 256,
-            tint: 0xffffff,
+            tint: 0x00ff00,
         },
         animations:[
             { name: 'burst' },
@@ -105,6 +105,19 @@ export default Object.freeze({
         brightgreen:0xb6fc4c,
         red:0xd54d20,
         blochred:0xcf518a,
-    }
+    },
+
+    menu:{
+        x:20,
+        y:50,
+        icons:{
+            restart: 24,
+            help: 44,
+            mute: 140,
+            unmute: 120,
+            musicOn: 5,
+            musicOff: 25,
+        }
+    },
 
 });
