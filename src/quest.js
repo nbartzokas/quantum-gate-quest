@@ -16,21 +16,25 @@ import Win from './win';
 
 var Quest = function () {
 
-    this.qubit = null;
-    this.map = null;
-    this.layerFloor = null;
-    this.layerWalls = null;
-    this.layerGates = null;
-    this.layerReads = null;
-    this.player = null;
-    this.uiCircuit = null;
-    this.uiBloch = null;
-    this.music = null;
-    this.info=null;
-
-    this.tileOverlap = null; // holds any special tile the player is currently overlapping
-
-    this.inputActiveDirections = [];
+    this.qubit = null;                  // abstract representation of qubit, and interface to qiskit backend
+    this.map = null;                    // game tile map
+    this.layerFloor = null;             // map layer with floor tiles
+    this.layerWalls = null;             // map layer with wall tiles
+    this.layerGates = null;             // map layer with quantum gates
+    this.layerReads = null;             // map layer with measurement gates
+    this.gates = null;                  // quantum gates
+    this.reads = null;                  // "read" (measurement) gates
+    this.powerup = null;                // burst sprite for read tiles // TODO: powerups are old concept. mirror the use of burst instead
+    this.cursors = null;                // the Phaser directional key input object
+    this.player = null;                 // the player sprite
+    this.uiCircuit = null;              // the displayed circuit diagram, served dynamically from qiskit backend 
+    this.uiBloch = null;                // the displayed bloch sphere, served dynamically from qiskit backend
+    this.music = null;                  // background music
+    this.menu = null;                   // the restart, help, mute menu
+    this.info = null;                   // the help overlay that shows on load and 
+    this.win = null;                    // the win overlay that shows on success
+    this.tileOverlap = null;            // any special tile the player is currently overlapping
+    this.inputActiveDirections = [];    // any currently active directional inputs, ordered by when they became active
 
 };
 
@@ -52,9 +56,11 @@ Quest.prototype = {
     },
 
     preload: function () {
-
+        
+        // game titles and other static elements
         this.load.image('bg','assets/images/bg.png?nocache='+Date.now(),true);
         
+        // help pages
         this.load.image('info-1','assets/images/info-1.png?nocache='+Date.now(),true);
         this.load.image('info-2','assets/images/info-2.png?nocache='+Date.now(),true);
         this.load.image('info-3','assets/images/info-3.png?nocache='+Date.now(),true);
@@ -66,44 +72,52 @@ Quest.prototype = {
         this.load.image('info-9','assets/images/info-9.png?nocache='+Date.now(),true);
         this.load.image('win','assets/images/win.png?nocache='+Date.now(),true);
         
+        // burst sprite that plays when you hit a quantum gate
         this.load.spritesheet('burst', 'assets/sprites/burst.png', 100, 100);
         this.load.audio('burst_sound','assets/sounds/446145__justinvoke__freeze-hit.wav');
 
+        // powerup sprite that plays when you hit a measurement gate
         this.load.spritesheet('powerup', 'assets/sprites/burst.png', 100, 100);
         this.load.audio('powerup_sound','assets/sounds/478342__joao-janz__bouncing-power-up-1-5.wav');
 
+        // main spritesheet, tilesheet, and map
         this.load.spritesheet('spritesheet', 'assets/tiles/tilesheet.png?nocache='+Date.now(), 64, 64);
         this.load.image('tiles', 'assets/tiles/tilesheet.png?nocache='+Date.now());
         this.load.tilemap('map', 'assets/maps/map.json?nocache='+Date.now(), null, Phaser.Tilemap.TILED_JSON);
 
-        // quantum ui
+        // quantum ui circuit diagram and bloch sphere (refreshed later any time they change)
         this.load.image('qcircuit', 'draw.png?nocache='+Date.now(),true);
         this.load.image('qbloch', 'bloch.png?nocache='+Date.now(),true);
 
         // background music
         this.load.audio('bgmusic', ['assets/sounds/Juhani Junkala [Chiptune Adventures] 1. Stage 1.ogg']);
 
-        // win sound
+        // win sound effect
         this.load.audio('winsound', ['assets/sounds/hero_win.ogg']);
 
-        // ui icons
+        // ui menu icons
         this.load.spritesheet('icons','assets/sprites/icons.png?nocache='+Date.now(),50,50);
 
     },
 
     create: function () {
 
+        // set up the game map
         this.map = this.add.tilemap('map');
         this.map.addTilesetImage('tileset', 'tiles');
 
+        // create floor layer
         this.layerFloor = this.map.createLayer('floor');
 
+        // create wall layer and add colliders
         this.layerWalls = this.map.createLayer('walls');
         this.map.setCollisionByExclusion(config.tiles.empty,true/*collides*/,this.layerWalls);
 
+        // create quantum gate and measurement gate layers
         this.layerGates = this.map.createLayer('gates');
         this.layerReads = this.map.createLayer('reads');
 
+        // set up gates and their colliders
         this.gates = this.add.physicsGroup();
         this.map.createFromTiles(config.tiles.gate0, -1, 'spritesheet', this.layerGates, this.gates, { frame:config.frames.gate0 });
         this.map.createFromTiles(config.tiles.gateX, -1, 'spritesheet', this.layerGates, this.gates, { frame:config.frames.gateX });
@@ -117,6 +131,7 @@ Quest.prototype = {
             tile.body.height-=config.tileBuffer*2;
         });
 
+        // set up measurements and their colliders
         this.reads = this.add.physicsGroup();
         this.map.createFromTiles(config.tiles.readX, -1, 'spritesheet', this.layerReads, this.reads, {frame: config.frames.readX});
         this.map.createFromTiles(config.tiles.readY, -1, 'spritesheet', this.layerReads, this.reads, {frame: config.frames.readY});
@@ -128,6 +143,7 @@ Quest.prototype = {
             tile.body.height-=config.tileBuffer*2;
         });
 
+        // set up read gate burst animation
         this.powerup = this.add.sprite(0,0,'powerup');
         this.powerup.anchor.set(0.5);
         this.powerup.tint = 0xff0000;
@@ -136,47 +152,64 @@ Quest.prototype = {
         this.powerup.animations.add('powerup');
         this.powerup.sound = this.add.audio('powerup_sound');
 
+        // create player
         this.player = Player.create( this, Object.freeze(Object.assign({},config.player,{
             // TODO: decouple, perhaps with event system
             map: this.map,
             layerWalls: this.layerWalls,
         })));
 
+        // set up phaser keyboard input
         this.cursors = this.input.keyboard.createCursorKeys();
 
-
-        // q ui
+        // set up circuit diagram
         this.uiCircuit = Circuit.create(this);
         this.uiCircuit.position.set(0,300);
 
+        // set up block sphere
         this.uiBloch = Bloch.create(this);
         this.uiBloch.position.set(676,136);
 
-        // backgroud music
+        // add and play backgroud music
         this.music = this.add.audio('bgmusic');
         this.music.loop=true;
         this.music.play();
 
+        // create menu witih restart, help, mute
         this.menu = Menu.create(this,config.menu);
 
+        // add "background" image which is actual in the forground :shrug:
         this.add.image(0,0,'bg');
 
+        // add help overlay
         this.info = Help.create(this,config.help);
 
+        // add help overlay
         this.win = Win.create(this);
 
     },
 
+    /**
+     * Restart the game by resetting player position and qubit state
+     */
     restart(){
         this.qubit.clear();
         this.player.reset();
     },
 
+    /**
+     * Activate the help screens
+     */
     help(){
         this.info.start();
     },
 
-    reloadDynamicAssets: function(){
+    /**
+     * Reload dynamic assets like quantum circuit diagram and bloch sphere
+     * These images are generated in Python and served from the backend and
+     * so need to be requested again any time the quantum state changes
+     */
+    reloadDynamicAssets(){
         this.load.image('qcircuit', 'draw?nocache='+Date.now(),true);
         this.load.image('qbloch', 'bloch?nocache='+Date.now(),true);
         this.load.onLoadComplete.addOnce(()=>{
@@ -190,7 +223,13 @@ Quest.prototype = {
         this.load.start();
     },
 
-    getDirectionKeys: function() {
+    /**
+     * Returns an array of all active directional inputs
+     * ordered by when they were initially pressed
+     * 
+     * @returns {array} active directional inputs
+     */
+    getDirectionKeys() {
         const keysAndDirections = [
             [this.cursors.left,  Phaser.LEFT],
             [this.cursors.right, Phaser.RIGHT],
@@ -213,14 +252,29 @@ Quest.prototype = {
         return this.inputActiveDirections;
     },
 
-    checkOverlap: function checkOverlap(spriteA, spriteB) {
+    /**
+     * Checks whwether spriteA and spriteB overlap
+     *
+     * @param {Phaser.Sprite} spriteA
+     * @param {Phaser.Sprite} spriteB
+     * @returns {boolean}
+     */
+    checkOverlap(spriteA, spriteB) {
         var boundsA = spriteA.getBounds();
         var boundsB = spriteB.getBounds();
         return Phaser.Rectangle.intersects(boundsA, boundsB);
     },
 
-    handleOverlapGate: function (sprite,tile) {
-        console.debug('handleOverlapGate',tile.frame);
+    /**
+     * On first overlap with a quantum gate, applies that gate to the qubit,
+     * sets the active overlapped tile property, plays burst animation,
+     * and reloads dynamic images
+     *
+     * @param {Phaser.Sprite} sprite
+     * @param {Phaser.Tile} tile
+     */
+    handleOverlapGate(sprite,tile) {
+        // console.debug('handleOverlapGate',tile.frame);
         if (this.tileOverlap !== tile){
     
             console.log('applying gate');
@@ -267,9 +321,16 @@ Quest.prototype = {
         }
     },
 
-    // TODO: these handlers smell like a component behavior for a tile overlap system
-    handleOverlapRead: function (sprite,tile) {
-        console.debug('handleOverlapGate',tile.frame);
+    /**
+     * On first overlap with a measurement gate, sets overlapped tile property,
+     * checks for success condition, and plays "powerup" animation if satisfied
+     *
+     * @param {Phaser.Sprite} sprite
+     * @param {Phaser.Tile} tile
+     */
+    handleOverlapRead(sprite,tile) {
+        // TODO: these handlers smell like a component behavior for a tile overlap system
+        // console.debug('handleOverlapGate',tile.frame);
         if (this.tileOverlap!==tile){
 
             const handler = ()=>{
@@ -306,7 +367,16 @@ Quest.prototype = {
             this.tileOverlap = tile;
         }
     },
-    handleCollideRead: function (sprite,tile){
+
+    /**
+     * Determines whether player can pass measurement gate
+     * by reading x, y, or z
+     *
+     * @param {Phaser.Sprite} sprite
+     * @param {Phaser.Tile} tile
+     * @returns {boolean} collide?
+     */
+    handleCollideRead(sprite,tile){
         console.log('handleCollideRead',tile.frame);
         let collide = false;
         switch (tile.frame){
@@ -326,20 +396,21 @@ Quest.prototype = {
         return collide;
     },
 
-    update: function () {
+    update() {
         
+        // check for wall collisions
         this.physics.arcade.collide(this.player, this.layerWalls, ()=>console.debug('bonk'));
+
+        // check for measurement gate collisions
         this.physics.arcade.collide(this.player, this.reads, null, this.handleCollideRead, this);
 
+        // check for quantum gate and measurement gate overlaps
         if (this.tileOverlap && !this.checkOverlap(this.player, this.tileOverlap)) { this.tileOverlap = null; }
         this.physics.arcade.overlap(this.player, this.gates, this.handleOverlapGate, null, this);
         this.physics.arcade.overlap(this.player, this.reads, this.handleOverlapRead, null, this);
 
-        // this.player.update();
-
-        const activeDirections = this.getDirectionKeys();
-
-        this.player.control(activeDirections);
+        // control player
+        this.player.control(this.getDirectionKeys());
 
     }
 

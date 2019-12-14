@@ -4,12 +4,30 @@ import PIXI from 'expose-loader?PIXI!phaser-ce/build/custom/pixi.js';
 import p2 from 'expose-loader?p2!phaser-ce/build/custom/p2.js';
 import Phaser from 'expose-loader?Phaser!phaser-ce/build/custom/phaser-split.js';
 
+/**
+ * Win screen
+ *
+ * @export
+ * @class Win
+ * @extends {Phaser.Group}
+ */
 export default class Win extends Phaser.Group {
     constructor(){
         super(...arguments);
         this.offset=0;
     }
     
+    /**
+     * Create a Win screen
+     *
+     * @static
+     * @param {Phaser.State} state
+     * @param {object} [options={}]
+     * @param {Phaser.Game} [options.game]
+     * @param {Phaser.Group} [options.group] parent
+     * @returns
+     * @memberof Win
+     */
     static create(state,options={}){
         const game = options.game || state.game;
         const group = options.group || state.world;
@@ -25,11 +43,17 @@ export default class Win extends Phaser.Group {
         return win;
     }
 
+    /**
+     * Move above the fold
+     */
     show(){
         this.image.x=0;
         this.sound.play();
     }
 
+    /**
+     * Move below the fold
+     */
     hide(){
         this.image.x=this.offset;
     }

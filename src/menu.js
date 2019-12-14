@@ -4,7 +4,15 @@ import PIXI from 'expose-loader?PIXI!phaser-ce/build/custom/pixi.js';
 import p2 from 'expose-loader?p2!phaser-ce/build/custom/p2.js';
 import Phaser from 'expose-loader?Phaser!phaser-ce/build/custom/phaser-split.js';
 
+/**
+ * Manu bar with restart, help, and mute buttons
+ *
+ * @export
+ * @class Menu
+ * @extends {Phaser.Group}
+ */
 export default class Menu extends Phaser.Group {
+
     constructor(){
         super(...arguments);
 
@@ -18,6 +26,20 @@ export default class Menu extends Phaser.Group {
         this.muteBtn = null;
     }
     
+    /**
+     * Create a Menu bar
+     *
+     * @static
+     * @param {Phaser.State} state
+     * @param {object} [options={}]
+     * @param {Phaser.Game} [options.game]
+     * @param {Phaser.Group} [options.group] parent
+     * @param {number} [options.x] x position
+     * @param {number} [options.y] y position
+     * @param {object} [options.icons] map icon names to spritesheet frame numbers
+     * @returns {Menu}
+     * @memberof Menu
+     */
     static create(state,options={}){
         const game = options.game || state.game;
         const group = options.group || state.world;
@@ -60,7 +82,7 @@ export default class Menu extends Phaser.Group {
 
         menu.muteBtn = game.add.button(x, y, 'icons', ()=>{
             state.sound.mute = !state.sound.mute;
-            localStorage.setItem('qgq:mute', state.sound.mute);
+            localStorage.setItem('qgq:mute', state.sound.mute); // store state in local storage
             menu.updateMuteState(state.sound.mute);
         }, menu, menu.iconMute, menu.iconMute, menu.iconUnmute, menu.iconMute, menu);
 
@@ -69,6 +91,12 @@ export default class Menu extends Phaser.Group {
         return menu;
     }
 
+    /**
+     * Set mute icon state
+     *
+     * @param {boolean} mute
+     * @memberof Menu
+     */
     updateMuteState(mute){
         if (mute){
             this.muteBtn.setFrames(this.iconMute,this.iconMute,this.iconUnmute,this.iconMute);

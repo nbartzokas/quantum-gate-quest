@@ -54,15 +54,6 @@ def query(instruction):
 
   # get instruction class
   inst_class = getattr( qiskit.extensions.standard, instruction )
-
-  # # apply gate, unless
-  # if ( len(circuit.data) > 0 and isinstance( circuit.data[-1][0], inst_class ) ):
-  #   # if last gate is same as this gate, remove last gate
-  #   circuit.data.pop()
-  # else:
-  #   # apply gate
-  #   # circuit.x(0)
-  #   circuit.append(inst_class(),circuit.qubits)
     
   circuit.append(inst_class(),circuit.qubits)
 

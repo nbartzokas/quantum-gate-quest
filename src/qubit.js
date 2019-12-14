@@ -1,3 +1,9 @@
+/**
+ * An abstract representation of a qubit, and an interface to the Python Qiskit backend
+ *
+ * @export
+ * @class Qubit
+ */
 export default class Qubit {
 
     constructor(){

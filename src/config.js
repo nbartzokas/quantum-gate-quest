@@ -6,10 +6,15 @@ import Phaser from 'expose-loader?Phaser!phaser-ce/build/custom/phaser-split.js'
 
 const GRID_SIZE = 64;
 
+/**
+ * Game configuration object
+ */
 export default Object.freeze({
 
-    // phaser-ce game
-    // see: https://photonstorm.github.io/phaser-ce/Phaser.Game.html
+    /**
+     * Phaser-CE game configuration object
+     * see: https://photonstorm.github.io/phaser-ce/Phaser.Game.html
+     */
     game:{
         width: 1088,
         height: 1088,
@@ -19,6 +24,10 @@ export default Object.freeze({
         transparent: true,
     },
 
+    /**
+     * Phaser-CE scale manager configuration object
+     * see: https://photonstorm.github.io/phaser-ce/Phaser.ScaleManager.html
+     */
     scale: {
         scaleMode: Phaser.ScaleManager.SHOW_ALL,
         pageAlignHorizontally: true,
@@ -26,8 +35,11 @@ export default Object.freeze({
     },
 
     gridsize: GRID_SIZE,
-    tileBuffer: 10,
+    tileBuffer: 10, // physics bodies are smaller on some tiles by this buffer
 
+    /**
+     * Player configuration. See `player.js` for more detail
+     */
     player:{
         sprite:{
             key: 'spritesheet',
@@ -48,6 +60,9 @@ export default Object.freeze({
         turnThreshold: GRID_SIZE / 2,
     },
 
+    /**
+     * Burst configuration. See `burst.js` for more detail
+     */
     burst:{
         sprite:{
             key: 'burst',
@@ -64,18 +79,11 @@ export default Object.freeze({
         audio:'burst_sound',
     },
 
-    score: {
-        x:0,
-        y:5000, 
-        text:'Score: ',
-        style: {
-            font: '65px Arial',
-            fill: '#ff0044',
-            align: 'left'
-        }
-    },
-
+    /**
+     * Tile IDs
+     */
     tiles:{
+
         empty: [-1,0],
         wall: 19,
 
@@ -91,9 +99,11 @@ export default Object.freeze({
         readZ: 52,
     },
 
+    /**
+     * Tiles as spritesheet frames (Tile ID - 1)
+     */
     frames:{
 
-        // tile id - 1
         gate0: 12,
         gateX: 11,
         gateH: 50,
@@ -106,6 +116,9 @@ export default Object.freeze({
         readZ: 51,
     },
 
+    /**
+     * Colors!!!
+     */
     colors:{
         blue:0x30b0ff,
         lightgreen:0x20d5d2,
@@ -120,6 +133,9 @@ export default Object.freeze({
         blochred:0xcf518a,
     },
 
+    /**
+     * Menu configuration. See `menu.js` for more detail
+     */
     menu:{
         x:20,
         y:50,
@@ -133,6 +149,9 @@ export default Object.freeze({
         }
     },
 
+    /**
+     * Help configuration. See `help.js` for more detail
+     */
     help:{
         images:[
             'info-1',

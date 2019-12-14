@@ -7,6 +7,13 @@ import Phaser from 'expose-loader?Phaser!phaser-ce/build/custom/phaser-split.js'
 import config from './config';
 import util from './util';
 
+/**
+ * Player sprite
+ *
+ * @export
+ * @class Player
+ * @extends {Phaser.Sprite}
+ */
 export default class Player extends Phaser.Sprite {
     constructor(){
         super(...arguments);
@@ -19,6 +26,23 @@ export default class Player extends Phaser.Sprite {
         this.adjacentTiles = [ null, null, null, null, null ];
         this.options = null;
     }
+
+    /**
+     * Create Player sprite
+     *
+     * @static
+     * @param {Phaser.State} state
+     * @param {object} [options={}]
+     * @param {Phaser.Game} [options.game]
+     * @param {Phaser.Group} [options.group] parent
+     * @param {object} [options.sprite] Phaser.Sprite settings
+     * @param {array} [options.animations] array of Phaser.Animation settings
+     * @param {boolean} [options.physics] activate physics?
+     * @param {number} [options.speed] movement speed
+     * @param {number} [options.turnThreshold] close enough to turn
+     * @returns {Player}
+     * @memberof Player
+     */
     static create(state,options={}){
         const game = options.game || state.game;
         const group = options.group || state.world;
@@ -51,10 +75,21 @@ export default class Player extends Phaser.Sprite {
 
     }
 
+    /**
+     * Reset player to starting position
+     *
+     * @memberof Player
+     */
     reset(){
         this.position.set(this.options.sprite.x,this.options.sprite.y);
     }
 
+    /**
+     * Receives direction key input and moves player around on the map
+     *
+     * @param {array} activeDirections ordered list of active directional inputs
+     * @memberof Player
+     */
     control(activeDirections){
 
         this.setNearestTile();
@@ -118,6 +153,13 @@ export default class Player extends Phaser.Sprite {
         }
     }
 
+    /**
+     * Moves player in a direction on the map, playing walking animation, 
+     * and setting direction property
+     *
+     * @param {Phaser.LEFT|Phaser.RIGHT|Phaser.UP|Phaser.DOWN} direction Phaser directional constant
+     * @memberof Player
+     */
     move(direction) {
         // console.debug('[player] move', util.dirToString(direction) );
 
@@ -152,6 +194,11 @@ export default class Player extends Phaser.Sprite {
 
     }
 
+    /**
+     * Stop player movement and walk animation
+     *
+     * @memberof Player
+     */
     stop() {
         // console.debug('[player] stop');
         this.body.velocity.set(0);
@@ -159,6 +206,13 @@ export default class Player extends Phaser.Sprite {
         this.animations.stop(null,true);
     }
 
+    /**
+     * Checks whether a turn is possible, in other words that the player is within turnThreshold of an empty tile
+     *
+     * @param {Phaser.LEFT|Phaser.RIGHT|Phaser.UP|Phaser.DOWN} turnTo Phaser direction to turn towards
+     * @returns {boolean} whether or not a turn is possible
+     * @memberof Player
+     */
     turn(turnTo) {
         // console.debug('[player] attempting turn', util.dirToString(turnTo));
 
@@ -189,17 +243,32 @@ export default class Player extends Phaser.Sprite {
 
     }
 
+    /**
+     * Set pixel coordinates of the center point of the tile nearest the player
+     *
+     * @memberof Player
+     */
     setTurnPoint(){
         this.turnPoint.x = (this.nearestTile.x * config.gridsize) + (config.gridsize / 2);
         this.turnPoint.y = (this.nearestTile.y * config.gridsize) + (config.gridsize / 2);
         // console.debug('[player] setTurnPoint',this.turnPoint,this.nearestTile)
     }
 
+    /**
+     * Set the coordinates (in number of tiles) of the tile nearest the player
+     *
+     * @memberof Player
+     */
     setNearestTile(){
         this.nearestTile.x = this.game.math.snapToFloor(Math.floor(this.x), config.gridsize) / config.gridsize;
         this.nearestTile.y = this.game.math.snapToFloor(Math.floor(this.y), config.gridsize) / config.gridsize;
     }
 
+    /**
+     * Fill `adjacentTiles` object with all tiles adjacent to the one nearest the player
+     *
+     * @memberof Player
+     */
     setAdjacentTiles(){
         this.adjacentTiles[Phaser.LEFT]  = this.map.getTileLeft(this.layerWalls.index, this.nearestTile.x, this.nearestTile.y);
         this.adjacentTiles[Phaser.RIGHT] = this.map.getTileRight(this.layerWalls.index, this.nearestTile.x, this.nearestTile.y);
@@ -207,6 +276,13 @@ export default class Player extends Phaser.Sprite {
         this.adjacentTiles[Phaser.DOWN]  = this.map.getTileBelow(this.layerWalls.index, this.nearestTile.x, this.nearestTile.y);
     }
 
+    /**
+     * Check whether player can move in a direction
+     *
+     * @param {Phaser.LEFT|Phaser.RIGHT|Phaser.UP|Phaser.DOWN} turnTo Phaser direction to turn towards
+     * @returns {boolean} true if player can move in that direction
+     * @memberof Player
+     */
     checkDirection(turnTo) {
 
         if (this.adjacentTiles[turnTo] === null){

@@ -6,7 +6,18 @@ import Phaser from 'expose-loader?Phaser!phaser-ce/build/custom/phaser-split.js'
 
 import config from './config';
 
+/**
+ * A graphical element displaying the Bloch sphere
+ * labeled with the measurement gates that the player
+ * can pass through when the diagram's arrow points in
+ * that direction
+ *
+ * @export
+ * @class Bloch
+ * @extends {Phaser.Group}
+ */
 export default class Bloch extends Phaser.Group {
+
     constructor(){
         super(...arguments);
         this.blochDiagramContainer = null;
@@ -18,6 +29,17 @@ export default class Bloch extends Phaser.Group {
         };
     }
     
+    /**
+     * Create a Bloch sphere diagram
+     *
+     * @static
+     * @param {Phaser.State} state
+     * @param {object} [options={}]
+     * @param {Phaser.Game} [options.game]
+     * @param {Phaser.Group} [options.group] parent
+     * @returns {Bloch}
+     * @memberof Bloch
+     */
     static create(state,options={}){
         const game = options.game || state.game;
         const group = options.group || state.world;
@@ -35,7 +57,12 @@ export default class Bloch extends Phaser.Group {
 
         return bloch;
     }
-
+ 
+    /**
+     * Reloads Bloch texture when quantum state changes
+     *
+     * @memberof Bloch
+     */
     reloadTexture(){
         this.blochDiagram.loadTexture('qbloch');
     }

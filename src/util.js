@@ -8,7 +8,13 @@ export default {
 
     // Phaser utilities
 
-    dirToString: function(dir){
+    /**
+     * Maps a Phaser directional constant to a string description, for debugging purposes
+     *
+     * @param {Phaser.NONE|Phaser.LEFT|Phaser.RIGHT|Phaser.UP|Phaser.DOWN} dir Phaser directional constant
+     * @returns
+     */
+    dirToString(dir){
         return dir === Phaser.NONE ? 'NONE' :
                dir === Phaser.LEFT ? 'LEFT' :
                dir === Phaser.RIGHT ? 'RIGHT' :
@@ -17,7 +23,13 @@ export default {
                '';
     },
 
-    tileOpposite: function(tile){
+    /**
+     * Given a Phaser directional constant, returns the opposite direction. NONE returns NONE.
+     *
+     * @param {Phaser.NONE|Phaser.LEFT|Phaser.RIGHT|Phaser.UP|Phaser.DOWN} tile Phaser directional constant
+     * @returns {Phaser.NONE|Phaser.LEFT|Phaser.RIGHT|Phaser.UP|Phaser.DOWN} opposite direction
+     */
+    tileOpposite(tile){
         const opposites = [ Phaser.NONE, Phaser.RIGHT, Phaser.LEFT, Phaser.DOWN, Phaser.UP ];
         return opposites[tile];
     },
