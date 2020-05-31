@@ -1,6 +1,6 @@
 # Quantum Gate Quest
 
-Quantum Gate Quest is a classic 2D dungeon crawler whose puzzles are powered by IBM's quantum technology!
+Quantum Gate Quest is a classic 2D dungeon crawler whose puzzles are powered by IBM's quantum technology! It won the [2019 IBM Quantum Award](https://www.ibm.com/blogs/research/2020/03/2019-ibmq-awards/).
 
 ![](./logo.png)
 
